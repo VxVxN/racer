@@ -8,6 +8,7 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"image"
+	"os"
 	"time"
 )
 
@@ -97,5 +98,18 @@ func (game *Game) addEvents() {
 		if game.player.X() > game.width/2-float64(game.road.Bounds().Dx())/2+40 {
 			game.player.Move(ebiten.KeyLeft)
 		}
+	})
+	game.eventManager.AddPressEvent(ebiten.KeyUp, func() {
+		if game.player.Y() > 0 {
+			game.player.Move(ebiten.KeyUp)
+		}
+	})
+	game.eventManager.AddPressEvent(ebiten.KeyDown, func() {
+		if game.player.Y() < game.height-250 {
+			game.player.Move(ebiten.KeyDown)
+		}
+	})
+	game.eventManager.AddPressEvent(ebiten.KeyEscape, func() {
+		os.Exit(0)
 	})
 }
