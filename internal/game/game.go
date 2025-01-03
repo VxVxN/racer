@@ -2,6 +2,7 @@ package game
 
 import (
 	"fmt"
+	"github.com/VxVxN/game/pkg/audioplayer"
 	"github.com/VxVxN/game/pkg/eventmanager"
 	"github.com/VxVxN/game/pkg/player"
 	"github.com/hajimehoshi/ebiten/v2"
@@ -37,6 +38,12 @@ func NewGame(width, height float64) (*Game, error) {
 	player := player.NewPlayer(car)
 
 	ebiten.SetWindowSize(int(width), int(height))
+
+	audioPlayer, err := audioplayer.NewAudioPlayer("music")
+	if err != nil {
+		return nil, fmt.Errorf("failed to init audio player: %v", err)
+	}
+	audioPlayer.Play()
 
 	game := &Game{
 		scrollSpeed:  15.0,
