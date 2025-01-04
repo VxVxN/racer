@@ -28,6 +28,7 @@ var supportedKeys = []ebiten.Key{
 	ebiten.KeySpace,
 	ebiten.KeyI,
 	ebiten.KeyQ,
+	ebiten.KeyEnter,
 }
 
 func (eventManager *EventManager) Update() {
