@@ -7,11 +7,12 @@ import (
 )
 
 func main() {
-	game, err := game.NewGame(1680, 1050)
+	game, err := game.NewGame()
 	if err != nil {
 		log.Fatalf("Failed to init game: %v", err)
 	}
 
+	ebiten.SetFullscreen(true)
 	ebiten.SetWindowTitle("Racer")
 
 	if err = ebiten.RunGame(game); err != nil {

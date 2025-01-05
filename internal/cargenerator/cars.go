@@ -10,10 +10,10 @@ type CarGenerator struct {
 	cars         []*Car
 }
 
-func New(images []*ebiten.Image, screenHeight float64) *CarGenerator {
+func New(images []*ebiten.Image, screenHeight, startRoad float64) *CarGenerator {
 	cars := make([]*Car, 0, len(images))
 	for _, image := range images {
-		cars = append(cars, newCar(image, screenHeight))
+		cars = append(cars, newCar(image, screenHeight, startRoad))
 	}
 	return &CarGenerator{
 		cars:         cars,

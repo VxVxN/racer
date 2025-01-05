@@ -8,6 +8,7 @@ import (
 
 type Car struct {
 	screenHeight float64
+	startRoad    float64
 	*rectangle.Rectangle
 	image *ebiten.Image
 }
@@ -22,10 +23,11 @@ const (
 	FifthLane
 )
 
-func newCar(image *ebiten.Image, screenHeight float64) *Car {
+func newCar(image *ebiten.Image, screenHeight, startRoad float64) *Car {
 	return &Car{
-		Rectangle:    rectangle.New(390, -500, float64(image.Bounds().Dx()), float64(image.Bounds().Dy())),
+		Rectangle:    rectangle.New(startRoad+65, -500, float64(image.Bounds().Dx()), float64(image.Bounds().Dy())),
 		screenHeight: screenHeight,
+		startRoad:    startRoad,
 		image:        image,
 	}
 }
@@ -36,15 +38,15 @@ func (car *Car) Update(scrollSpeed float64) {
 		car.Y = float64(rand.IntN(400) - 930)
 		switch roadLane(rand.IntN(5)) {
 		case FirstLane:
-			car.X = 390
+			car.X = car.startRoad + 65
 		case SecondLane:
-			car.X = 590
+			car.X = car.startRoad + 265
 		case ThirdLane:
-			car.X = 790
+			car.X = car.startRoad + 465
 		case FourthLane:
-			car.X = 990
+			car.X = car.startRoad + 655
 		case FifthLane:
-			car.X = 1190
+			car.X = car.startRoad + 855
 		}
 	}
 }

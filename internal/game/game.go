@@ -50,7 +50,10 @@ const (
 	SetPlayerRecordStage
 )
 
-func NewGame(width, height float64) (*Game, error) {
+func NewGame() (*Game, error) {
+	w, h := ebiten.Monitor().Size()
+	width, height := float64(w), float64(h)
+
 	road, _, err := ebitenutil.NewImageFromFile("assets/road.png")
 	if err != nil {
 		return nil, fmt.Errorf("failed to init road image: %v", err)
@@ -68,7 +71,8 @@ func NewGame(width, height float64) (*Game, error) {
 	grayCar := gameElementsSet.SubImage(image.Rect(360, 0, 470, 220)).(*ebiten.Image)
 
 	player := player.NewPlayer(playerCar)
-	cars := cargenerator.New([]*ebiten.Image{greenCar, orangeCar, redCar, grayCar}, height)
+	startRoad := width/2 - float64(road.Bounds().Dx())/2
+	cars := cargenerator.New([]*ebiten.Image{greenCar, orangeCar, redCar, grayCar}, height, startRoad)
 
 	ebiten.SetWindowSize(int(width), int(height))
 
@@ -322,7 +326,7 @@ func (game *Game) Draw(screen *ebiten.Image) {
 }
 
 func (game *Game) Layout(screenWidthPx, screenHeightPx int) (int, int) {
-	return 1680, 1050
+	return screenWidthPx, screenHeightPx
 }
 
 func (game *Game) addEvents() {
