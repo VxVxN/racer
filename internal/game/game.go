@@ -9,12 +9,16 @@ import (
 	"github.com/VxVxN/game/pkg/eventmanager"
 	"github.com/VxVxN/game/pkg/menu"
 	"github.com/VxVxN/game/pkg/player"
+	"github.com/VxVxN/game/pkg/statisticer"
+	"github.com/VxVxN/game/pkg/textfield"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/hajimehoshi/ebiten/v2/text/v2"
 	"golang.org/x/image/font/gofont/goregular"
 	"image"
+	"log"
 	"os"
+	"sort"
 	"time"
 )
 
@@ -31,6 +35,8 @@ type Game struct {
 	stage          Stage
 	mainMenu       *menu.Menu
 	menu           *menu.Menu
+	statisticer    *statisticer.Statisticer
+	textField      *textfield.TextField
 }
 
 type Stage int
@@ -40,6 +46,8 @@ const (
 	GameOverStage
 	MainMenuStage
 	MenuStage
+	StatisticsStage
+	SetPlayerRecordStage
 )
 
 func NewGame(width, height float64) (*Game, error) {
@@ -80,6 +88,13 @@ func NewGame(width, height float64) (*Game, error) {
 		Size:   32,
 	}
 
+	inputTextFace := &text.GoTextFace{
+		Source: textFaceSource,
+		Size:   32,
+	}
+
+	textField := textfield.NewTextField(inputTextFace, image.Rect(16, 150, int(width-16), int(150+inputTextFace.Size)), false)
+
 	game := &Game{
 		scrollSpeed:    20.0,
 		width:          width,
@@ -92,6 +107,8 @@ func NewGame(width, height float64) (*Game, error) {
 		cars:           cars,
 		textFaceSource: textFaceSource,
 		stage:          MainMenuStage,
+		statisticer:    statisticer.NewStatisticer(),
+		textField:      textField,
 	}
 
 	mainMenu, err := menu.NewMenu(width, height, menuTextFace, []menu.ButtonOptions{
@@ -99,6 +116,14 @@ func NewGame(width, height float64) (*Game, error) {
 			Text: "New game",
 			Action: func() {
 				game.stage = GameStage
+				game.player.Reset()
+				game.cars.Reset()
+			},
+		},
+		{
+			Text: "Player ratings",
+			Action: func() {
+				game.stage = StatisticsStage
 			},
 		},
 		{
@@ -146,17 +171,63 @@ func (game *Game) Update() error {
 	if time.Since(game.globalTime) < time.Second/time.Duration(64) {
 		return nil
 	}
+	if game.stage == SetPlayerRecordStage {
+		game.textField.Focus()
+		if err := game.textField.Update(); err != nil {
+			log.Fatalf("Failed to update text: %v", err)
+		}
+		return nil
+	}
 	if game.stage != GameStage {
 		return nil
 	}
 	if game.cars.Collision(game.player.Rectangle) {
 		game.stage = GameOverStage
+		records, err := game.statisticer.Load()
+		if err != nil {
+			log.Fatalf("Failed to load statistics: %v", err)
+		}
+		_, isRecord := preparePlayerRatings(records, game.player.Name(), int(game.player.Points()))
+		if !isRecord {
+			return nil
+		}
+		game.stage = SetPlayerRecordStage
 		return nil
 	}
 	game.globalTime = time.Now()
 	game.background.Update(game.scrollSpeed)
+	game.player.Update()
 	game.cars.Update(game.scrollSpeed - 3)
 	return nil
+}
+
+func preparePlayerRatings(records []statisticer.Record, playerName string, playerPoints int) ([]statisticer.Record, bool) {
+	if len(records) == 0 {
+		return append(records, statisticer.NewRecord(playerName, playerPoints)), true
+	}
+
+	var isRecord bool
+	for _, record := range records {
+		if playerPoints > record.Points {
+			isRecord = true
+			break
+		}
+	}
+	if len(records) < 10 {
+		isRecord = true
+	}
+	if !isRecord {
+		return records, false
+	}
+	records = append(records, statisticer.NewRecord(playerName, playerPoints))
+
+	sort.Slice(records, func(i, j int) bool {
+		return records[i].Points > records[j].Points
+	})
+	if len(records) > 10 {
+		records = records[:10]
+	}
+	return records, true
 }
 
 func (game *Game) Draw(screen *ebiten.Image) {
@@ -167,22 +238,86 @@ func (game *Game) Draw(screen *ebiten.Image) {
 	case MenuStage:
 		game.menu.Draw(screen)
 		return
-	default:
-	}
-	game.background.Draw(screen)
-	game.player.Draw(screen)
-	game.cars.Draw(screen)
-	if game.stage == GameOverStage {
+	case StatisticsStage:
+		records, err := game.statisticer.Load()
+		if err != nil {
+			log.Fatalf("Failed to load statistics: %v", err)
+		}
 		textFace := &text.GoTextFace{
 			Source: game.textFaceSource,
-			Size:   64,
+			Size:   48,
 		}
 
 		op := &text.DrawOptions{}
-		op.GeoM.Translate(game.width/2, game.height/2)
-		op.ColorScale.Scale(255, 0, 0, 1)
+		op.GeoM.Translate(game.width/2, 100)
+		op.ColorScale.Scale(255, 255, 255, 1)
 		op.LayoutOptions.PrimaryAlign = text.AlignCenter
-		text.Draw(screen, "Game over", textFace, op)
+		text.Draw(screen, "Player ratings:", textFace, op)
+
+		textFace = &text.GoTextFace{
+			Source: game.textFaceSource,
+			Size:   24,
+		}
+
+		op = &text.DrawOptions{}
+		op.GeoM.Translate(game.width/2, 200)
+		op.ColorScale.Scale(255, 255, 255, 1)
+		op.LayoutOptions.PrimaryAlign = text.AlignCenter
+		text.Draw(screen, "Name: Points", textFace, op)
+
+		for i, record := range records {
+			textFace = &text.GoTextFace{
+				Source: game.textFaceSource,
+				Size:   24,
+			}
+
+			op = &text.DrawOptions{}
+			op.GeoM.Translate(game.width/2, 250+float64(i*48))
+			op.ColorScale.Scale(255, 255, 255, 1)
+			op.LayoutOptions.PrimaryAlign = text.AlignCenter
+			text.Draw(screen, fmt.Sprintf("%d) %s: %d", i+1, record.Name, record.Points), textFace, op)
+		}
+		return
+	case SetPlayerRecordStage:
+		textFace := &text.GoTextFace{
+			Source: game.textFaceSource,
+			Size:   24,
+		}
+
+		op := &text.DrawOptions{}
+		op.GeoM.Translate(game.width/2, 100)
+		op.ColorScale.Scale(255, 255, 255, 1)
+		op.LayoutOptions.PrimaryAlign = text.AlignCenter
+		text.Draw(screen, "Enter your name:", textFace, op)
+		game.textField.Draw(screen)
+	case GameStage, GameOverStage:
+		game.background.Draw(screen)
+		game.player.Draw(screen)
+		game.cars.Draw(screen)
+		textFace := &text.GoTextFace{
+			Source: game.textFaceSource,
+			Size:   24,
+		}
+
+		op := &text.DrawOptions{}
+		op.GeoM.Translate(game.width/2, 0)
+		op.ColorScale.Scale(0, 0, 0, 1)
+		op.LayoutOptions.PrimaryAlign = text.AlignCenter
+		text.Draw(screen, fmt.Sprintf("Points: %d", int(game.player.Points())), textFace, op)
+
+		if game.stage == GameOverStage {
+			textFace = &text.GoTextFace{
+				Source: game.textFaceSource,
+				Size:   64,
+			}
+
+			op = &text.DrawOptions{}
+			op.GeoM.Translate(game.width/2, game.height/2)
+			op.ColorScale.Scale(255, 0, 0, 1)
+			op.LayoutOptions.PrimaryAlign = text.AlignCenter
+			text.Draw(screen, "Game over", textFace, op)
+		}
+	default:
 	}
 }
 
@@ -249,19 +384,34 @@ func (game *Game) addEvents() {
 		switch game.stage {
 		case GameStage:
 			game.stage = MenuStage
-		case MainMenuStage:
+		case StatisticsStage:
+			game.stage = MainMenuStage
 		}
 	})
 	game.eventManager.AddPressedEvent(ebiten.KeyEnter, func() {
 		switch game.stage {
 		case GameStage:
 		case GameOverStage:
+			game.player.Reset()
 			game.cars.Reset()
 			game.stage = GameStage
 		case MainMenuStage:
 			game.mainMenu.ClickActiveButton()
 		case MenuStage:
 			game.menu.ClickActiveButton()
+		case StatisticsStage:
+			game.stage = MainMenuStage
+		case SetPlayerRecordStage:
+			game.player.SetName(game.textField.Text())
+			records, err := game.statisticer.Load()
+			if err != nil {
+				log.Fatalf("Failed to load statistics: %v", err)
+			}
+			resultRecords, _ := preparePlayerRatings(records, game.player.Name(), int(game.player.Points()))
+			if err := game.statisticer.Save(resultRecords); err != nil {
+				log.Fatalf("Failed to save results: %v", err)
+			}
+			game.stage = StatisticsStage
 		}
 	})
 }

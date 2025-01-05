@@ -6,6 +6,8 @@ import (
 )
 
 type Player struct {
+	name   string
+	points float64
 	*rectangle.Rectangle
 	speed float64
 	image *ebiten.Image
@@ -17,6 +19,10 @@ func NewPlayer(image *ebiten.Image) *Player {
 		Rectangle: rectangle.New(600, 950-float64(image.Bounds().Dy()), float64(image.Bounds().Dx()), float64(image.Bounds().Dy())),
 		image:     image,
 	}
+}
+
+func (player *Player) Update() {
+	player.points += 0.1
 }
 
 func (player *Player) Draw(screen *ebiten.Image) {
@@ -37,4 +43,20 @@ func (player *Player) Move(key ebiten.Key) {
 		player.Y += player.speed
 	default:
 	}
+}
+
+func (player *Player) Points() float64 {
+	return player.points
+}
+
+func (player *Player) Reset() {
+	player.points = 0
+}
+
+func (player *Player) SetName(name string) {
+	player.name = name
+}
+
+func (player *Player) Name() string {
+	return player.name
 }
