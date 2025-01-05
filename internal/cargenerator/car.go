@@ -6,7 +6,7 @@ import (
 	"math/rand/v2"
 )
 
-type car struct {
+type Car struct {
 	screenHeight float64
 	*rectangle.Rectangle
 	image *ebiten.Image
@@ -22,15 +22,15 @@ const (
 	FifthLane
 )
 
-func newCar(image *ebiten.Image, screenHeight float64) *car {
-	return &car{
+func newCar(image *ebiten.Image, screenHeight float64) *Car {
+	return &Car{
 		Rectangle:    rectangle.New(390, -500, float64(image.Bounds().Dx()), float64(image.Bounds().Dy())),
 		screenHeight: screenHeight,
 		image:        image,
 	}
 }
 
-func (car *car) Update(scrollSpeed float64) {
+func (car *Car) Update(scrollSpeed float64) {
 	car.Y += scrollSpeed
 	if car.Y > car.screenHeight {
 		car.Y = float64(rand.IntN(400) - 930)
@@ -49,12 +49,12 @@ func (car *car) Update(scrollSpeed float64) {
 	}
 }
 
-func (car *car) Draw(screen *ebiten.Image) {
+func (car *Car) Draw(screen *ebiten.Image) {
 	op := &ebiten.DrawImageOptions{}
 	op.GeoM.Translate(car.X, car.Y)
 	screen.DrawImage(car.image, op)
 }
 
-func (car *car) Reset() {
+func (car *Car) Reset() {
 	car.Y = -500
 }

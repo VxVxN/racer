@@ -7,11 +7,11 @@ import (
 
 type CarGenerator struct {
 	screenHeight float64
-	cars         []*car
+	cars         []*Car
 }
 
 func New(images []*ebiten.Image, screenHeight float64) *CarGenerator {
-	cars := make([]*car, 0, len(images))
+	cars := make([]*Car, 0, len(images))
 	for _, image := range images {
 		cars = append(cars, newCar(image, screenHeight))
 	}

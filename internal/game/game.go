@@ -3,10 +3,11 @@ package game
 import (
 	"bytes"
 	"fmt"
-	cars2 "github.com/VxVxN/game/internal/cargenerator"
+	"github.com/VxVxN/game/internal/cargenerator"
 	"github.com/VxVxN/game/pkg/audioplayer"
 	"github.com/VxVxN/game/pkg/background"
 	"github.com/VxVxN/game/pkg/eventmanager"
+	"github.com/VxVxN/game/pkg/menu"
 	"github.com/VxVxN/game/pkg/player"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
@@ -18,17 +19,28 @@ import (
 )
 
 type Game struct {
-	width, height float64
-	playerCar     *ebiten.Image
-	globalTime    time.Time
-	scrollSpeed   float64
-	gameOverFace  *text.GoTextFaceSource
-	eventManager  *eventmanager.EventManager
-	player        *player.Player
-	background    *background.Background
-	cars          *cars2.CarGenerator
-	gameOver      bool
+	width, height  float64
+	playerCar      *ebiten.Image
+	globalTime     time.Time
+	scrollSpeed    float64
+	textFaceSource *text.GoTextFaceSource
+	eventManager   *eventmanager.EventManager
+	player         *player.Player
+	background     *background.Background
+	cars           *cargenerator.CarGenerator
+	stage          Stage
+	mainMenu       *menu.Menu
+	menu           *menu.Menu
 }
+
+type Stage int
+
+const (
+	GameStage Stage = iota
+	GameOverStage
+	MainMenuStage
+	MenuStage
+)
 
 func NewGame(width, height float64) (*Game, error) {
 	road, _, err := ebitenutil.NewImageFromFile("assets/road.png")
@@ -48,7 +60,7 @@ func NewGame(width, height float64) (*Game, error) {
 	grayCar := gameElementsSet.SubImage(image.Rect(360, 0, 470, 220)).(*ebiten.Image)
 
 	player := player.NewPlayer(playerCar)
-	cars := cars2.New([]*ebiten.Image{greenCar, orangeCar, redCar, grayCar}, height)
+	cars := cargenerator.New([]*ebiten.Image{greenCar, orangeCar, redCar, grayCar}, height)
 
 	ebiten.SetWindowSize(int(width), int(height))
 
@@ -58,24 +70,72 @@ func NewGame(width, height float64) (*Game, error) {
 	}
 	audioPlayer.Play()
 
-	gameOverFace, err := text.NewGoTextFaceSource(bytes.NewReader(goregular.TTF))
+	textFaceSource, err := text.NewGoTextFaceSource(bytes.NewReader(goregular.TTF))
 	if err != nil {
-		return nil, fmt.Errorf("failed to create new face for game ofer face(font): %v", err)
+		return nil, fmt.Errorf("failed to create new face source: %v", err)
+	}
+
+	menuTextFace := &text.GoTextFace{
+		Source: textFaceSource,
+		Size:   32,
 	}
 
 	game := &Game{
-		scrollSpeed:  20.0,
-		width:        width,
-		height:       height,
-		background:   background.New(road, width),
-		playerCar:    playerCar,
-		globalTime:   time.Now(),
-		eventManager: eventmanager.NewEventManager(),
-		player:       player,
-		cars:         cars,
-		gameOverFace: gameOverFace,
+		scrollSpeed:    20.0,
+		width:          width,
+		height:         height,
+		background:     background.New(road, width),
+		playerCar:      playerCar,
+		globalTime:     time.Now(),
+		eventManager:   eventmanager.NewEventManager(),
+		player:         player,
+		cars:           cars,
+		textFaceSource: textFaceSource,
+		stage:          MainMenuStage,
 	}
 
+	mainMenu, err := menu.NewMenu(width, height, menuTextFace, []menu.ButtonOptions{
+		{
+			Text: "New game",
+			Action: func() {
+				game.stage = GameStage
+			},
+		},
+		{
+			Text: "Exit",
+			Action: func() {
+				os.Exit(0)
+			},
+		}})
+	if err != nil {
+		return nil, fmt.Errorf("failed new main menu: %v", err)
+	}
+
+	menu, err := menu.NewMenu(width, height, menuTextFace, []menu.ButtonOptions{
+		{
+			Text: "Continue game",
+			Action: func() {
+				game.stage = GameStage
+			},
+		},
+		{
+			Text: "Go back to the main menu",
+			Action: func() {
+				game.stage = MainMenuStage
+			},
+		},
+		{
+			Text: "Exit",
+			Action: func() {
+				os.Exit(0)
+			},
+		}})
+	if err != nil {
+		return nil, fmt.Errorf("failed new menu: %v", err)
+	}
+
+	game.mainMenu = mainMenu
+	game.menu = menu
 	game.addEvents()
 
 	return game, nil
@@ -86,8 +146,11 @@ func (game *Game) Update() error {
 	if time.Since(game.globalTime) < time.Second/time.Duration(64) {
 		return nil
 	}
+	if game.stage != GameStage {
+		return nil
+	}
 	if game.cars.Collision(game.player.Rectangle) {
-		game.gameOver = true
+		game.stage = GameOverStage
 		return nil
 	}
 	game.globalTime = time.Now()
@@ -97,18 +160,29 @@ func (game *Game) Update() error {
 }
 
 func (game *Game) Draw(screen *ebiten.Image) {
+	switch game.stage {
+	case MainMenuStage:
+		game.mainMenu.Draw(screen)
+		return
+	case MenuStage:
+		game.menu.Draw(screen)
+		return
+	default:
+	}
 	game.background.Draw(screen)
 	game.player.Draw(screen)
 	game.cars.Draw(screen)
-	if game.gameOver {
-		op := &text.DrawOptions{}
-		f := &text.GoTextFace{
-			Source: game.gameOverFace,
+	if game.stage == GameOverStage {
+		textFace := &text.GoTextFace{
+			Source: game.textFaceSource,
 			Size:   64,
 		}
-		op.GeoM.Translate(game.width/2-150, game.height/2)
+
+		op := &text.DrawOptions{}
+		op.GeoM.Translate(game.width/2, game.height/2)
 		op.ColorScale.Scale(255, 0, 0, 1)
-		text.Draw(screen, "Game over", f, op)
+		op.LayoutOptions.PrimaryAlign = text.AlignCenter
+		text.Draw(screen, "Game over", textFace, op)
 	}
 }
 
@@ -118,42 +192,76 @@ func (game *Game) Layout(screenWidthPx, screenHeightPx int) (int, int) {
 
 func (game *Game) addEvents() {
 	game.eventManager.AddPressEvent(ebiten.KeyRight, func() {
-		if game.gameOver {
-			return
-		}
-		if game.player.X < game.width/2+370 {
-			game.player.Move(ebiten.KeyRight)
+		switch game.stage {
+		case GameStage:
+			if game.player.X < game.width/2+370 {
+				game.player.Move(ebiten.KeyRight)
+			}
+		case GameOverStage:
+		case MainMenuStage:
 		}
 	})
 	game.eventManager.AddPressEvent(ebiten.KeyLeft, func() {
-		if game.gameOver {
-			return
-		}
-		if game.player.X > game.width/2-480 {
-			game.player.Move(ebiten.KeyLeft)
+		switch game.stage {
+		case GameStage:
+			if game.player.X > game.width/2-480 {
+				game.player.Move(ebiten.KeyLeft)
+			}
+		case GameOverStage:
+		case MainMenuStage:
 		}
 	})
 	game.eventManager.AddPressEvent(ebiten.KeyUp, func() {
-		if game.gameOver {
-			return
+		switch game.stage {
+		case GameStage:
+			if game.player.Y > 0 {
+				game.player.Move(ebiten.KeyUp)
+			}
+		case GameOverStage:
 		}
-		if game.player.Y > 0 {
-			game.player.Move(ebiten.KeyUp)
+	})
+	game.eventManager.AddPressedEvent(ebiten.KeyUp, func() {
+		switch game.stage {
+		case MainMenuStage:
+			game.mainMenu.BeforeMenuItem()
+		case MenuStage:
+			game.menu.BeforeMenuItem()
 		}
 	})
 	game.eventManager.AddPressEvent(ebiten.KeyDown, func() {
-		if game.gameOver {
-			return
+		switch game.stage {
+		case GameStage:
+			if game.player.Y < game.height-250 {
+				game.player.Move(ebiten.KeyDown)
+			}
+		case GameOverStage:
 		}
-		if game.player.Y < game.height-250 {
-			game.player.Move(ebiten.KeyDown)
+	})
+	game.eventManager.AddPressedEvent(ebiten.KeyDown, func() {
+		switch game.stage {
+		case MainMenuStage:
+			game.mainMenu.NextMenuItem()
+		case MenuStage:
+			game.menu.NextMenuItem()
 		}
 	})
 	game.eventManager.AddPressEvent(ebiten.KeyEscape, func() {
-		os.Exit(0)
+		switch game.stage {
+		case GameStage:
+			game.stage = MenuStage
+		case MainMenuStage:
+		}
 	})
-	game.eventManager.AddPressEvent(ebiten.KeyEnter, func() {
-		game.cars.Reset()
-		game.gameOver = false
+	game.eventManager.AddPressedEvent(ebiten.KeyEnter, func() {
+		switch game.stage {
+		case GameStage:
+		case GameOverStage:
+			game.cars.Reset()
+			game.stage = GameStage
+		case MainMenuStage:
+			game.mainMenu.ClickActiveButton()
+		case MenuStage:
+			game.menu.ClickActiveButton()
+		}
 	})
 }
