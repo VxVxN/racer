@@ -415,7 +415,7 @@ func (game *Game) addEvents() {
 	})
 	game.eventManager.AddPressEvent(ebiten.KeyEscape, func() {
 		switch game.stage {
-		case GameStage:
+		case GameStage, GameOverStage:
 			game.stage = MenuStage
 		case StatisticsStage:
 			game.stage = MainMenuStage
