@@ -7,10 +7,10 @@ import (
 	"github.com/VxVxN/game/pkg/audioplayer"
 	"github.com/VxVxN/game/pkg/background"
 	"github.com/VxVxN/game/pkg/eventmanager"
-	"github.com/VxVxN/game/pkg/menu"
 	"github.com/VxVxN/game/pkg/player"
 	"github.com/VxVxN/game/pkg/statisticer"
 	"github.com/VxVxN/game/pkg/textfield"
+	"github.com/VxVxN/gamedevlib/menu"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/hajimehoshi/ebiten/v2/text/v2"
@@ -135,7 +135,9 @@ func NewGame() (*Game, error) {
 			Action: func() {
 				os.Exit(0)
 			},
-		}})
+		}}, menu.MenuOptions{
+		ButtonPadding: 20,
+	})
 	if err != nil {
 		return nil, fmt.Errorf("failed new main menu: %v", err)
 	}
@@ -158,7 +160,9 @@ func NewGame() (*Game, error) {
 			Action: func() {
 				os.Exit(0)
 			},
-		}})
+		}}, menu.MenuOptions{
+		ButtonPadding: 20,
+	})
 	if err != nil {
 		return nil, fmt.Errorf("failed new menu: %v", err)
 	}
