@@ -6,10 +6,10 @@ import (
 	"github.com/VxVxN/game/internal/cargenerator"
 	"github.com/VxVxN/game/pkg/audioplayer"
 	"github.com/VxVxN/game/pkg/background"
-	"github.com/VxVxN/game/pkg/eventmanager"
 	"github.com/VxVxN/game/pkg/player"
 	"github.com/VxVxN/game/pkg/statisticer"
 	"github.com/VxVxN/game/pkg/textfield"
+	"github.com/VxVxN/gamedevlib/eventmanager"
 	"github.com/VxVxN/gamedevlib/menu"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
@@ -99,6 +99,15 @@ func NewGame() (*Game, error) {
 
 	textField := textfield.NewTextField(inputTextFace, image.Rect(16, 150, int(width-16), int(150+inputTextFace.Size)), false)
 
+	supportedKeys := []ebiten.Key{
+		ebiten.KeyUp,
+		ebiten.KeyDown,
+		ebiten.KeyLeft,
+		ebiten.KeyRight,
+		ebiten.KeyEscape,
+		ebiten.KeyEnter,
+	}
+
 	game := &Game{
 		scrollSpeed:    20.0,
 		width:          width,
@@ -106,7 +115,7 @@ func NewGame() (*Game, error) {
 		background:     background.New(road, width),
 		playerCar:      playerCar,
 		globalTime:     time.Now(),
-		eventManager:   eventmanager.NewEventManager(),
+		eventManager:   eventmanager.NewEventManager(supportedKeys),
 		player:         player,
 		cars:           cars,
 		textFaceSource: textFaceSource,
