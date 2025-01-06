@@ -37,6 +37,7 @@ type Game struct {
 	menu           *menu.Menu
 	statisticer    *statisticer.Statisticer
 	textField      *textfield.TextField
+	audioPlayer    *audioplayer.AudioPlayer
 }
 
 type Stage int
@@ -76,7 +77,7 @@ func NewGame() (*Game, error) {
 
 	ebiten.SetWindowSize(int(width), int(height))
 
-	audioPlayer, err := audioplayer.NewAudioPlayer("music")
+	audioPlayer, err := audioplayer.NewAudioPlayer("music", log.Default())
 	if err != nil {
 		return nil, fmt.Errorf("failed to init audio player: %v", err)
 	}
@@ -122,6 +123,7 @@ func NewGame() (*Game, error) {
 		stage:          MainMenuStage,
 		statisticer:    statisticer.NewStatisticer(),
 		textField:      textField,
+		audioPlayer:    audioPlayer,
 	}
 
 	mainMenu, err := menu.NewMenu(width, height, menuTextFace, []menu.ButtonOptions{
@@ -187,6 +189,9 @@ func (game *Game) Update() error {
 	game.eventManager.Update()
 	if time.Since(game.globalTime) < time.Second/time.Duration(64) {
 		return nil
+	}
+	if err := game.audioPlayer.Update(); err != nil {
+		log.Fatalf("Failed to update audio: %v", err)
 	}
 	if game.stage == SetPlayerRecordStage {
 		game.textField.Focus()
