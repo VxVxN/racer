@@ -307,6 +307,17 @@ func (game *Game) Draw(screen *ebiten.Image) {
 		}
 
 		op := &text.DrawOptions{}
+		op.GeoM.Translate(game.width/2, 50)
+		op.ColorScale.Scale(255, 255, 255, 1)
+		op.LayoutOptions.PrimaryAlign = text.AlignCenter
+		text.Draw(screen, fmt.Sprintf("Your new record: %d", int(game.player.Points())), textFace, op)
+
+		textFace = &text.GoTextFace{
+			Source: game.textFaceSource,
+			Size:   24,
+		}
+
+		op = &text.DrawOptions{}
 		op.GeoM.Translate(game.width/2, 100)
 		op.ColorScale.Scale(255, 255, 255, 1)
 		op.LayoutOptions.PrimaryAlign = text.AlignCenter
