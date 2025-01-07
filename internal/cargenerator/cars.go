@@ -1,6 +1,7 @@
 package cargenerator
 
 import (
+	"github.com/VxVxN/game/internal/shadow"
 	"github.com/VxVxN/game/pkg/rectangle"
 	"github.com/hajimehoshi/ebiten/v2"
 )
@@ -10,10 +11,10 @@ type CarGenerator struct {
 	cars         []*Car
 }
 
-func New(images []*ebiten.Image, screenHeight, startRoad float64) *CarGenerator {
+func New(images []*ebiten.Image, screenHeight, startRoad float64, carShadow *shadow.Shadow) *CarGenerator {
 	cars := make([]*Car, 0, len(images))
 	for _, image := range images {
-		cars = append(cars, newCar(image, screenHeight, startRoad))
+		cars = append(cars, newCar(image, screenHeight, startRoad, carShadow))
 	}
 	return &CarGenerator{
 		cars:         cars,

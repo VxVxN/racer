@@ -1,6 +1,7 @@
 package cargenerator
 
 import (
+	"github.com/VxVxN/game/internal/shadow"
 	"github.com/VxVxN/game/pkg/rectangle"
 	"github.com/hajimehoshi/ebiten/v2"
 	"math/rand/v2"
@@ -10,7 +11,8 @@ type Car struct {
 	screenHeight float64
 	startRoad    float64
 	*rectangle.Rectangle
-	image *ebiten.Image
+	image  *ebiten.Image
+	shadow *shadow.Shadow
 }
 
 type roadLane int
@@ -23,12 +25,13 @@ const (
 	FifthLane
 )
 
-func newCar(image *ebiten.Image, screenHeight, startRoad float64) *Car {
+func newCar(image *ebiten.Image, screenHeight, startRoad float64, shadow *shadow.Shadow) *Car {
 	return &Car{
 		Rectangle:    rectangle.New(startRoad+65, -500, float64(image.Bounds().Dx()), float64(image.Bounds().Dy())),
 		screenHeight: screenHeight,
 		startRoad:    startRoad,
 		image:        image,
+		shadow:       shadow,
 	}
 }
 
@@ -52,6 +55,8 @@ func (car *Car) Update(scrollSpeed float64) {
 }
 
 func (car *Car) Draw(screen *ebiten.Image) {
+	car.shadow.Draw(screen, car.X, car.Y)
+
 	op := &ebiten.DrawImageOptions{}
 	op.GeoM.Translate(car.X, car.Y)
 	screen.DrawImage(car.image, op)

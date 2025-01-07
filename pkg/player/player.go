@@ -1,6 +1,7 @@
 package player
 
 import (
+	"github.com/VxVxN/game/internal/shadow"
 	"github.com/VxVxN/game/pkg/rectangle"
 	"github.com/hajimehoshi/ebiten/v2"
 )
@@ -9,15 +10,17 @@ type Player struct {
 	name   string
 	points float64
 	*rectangle.Rectangle
-	speed float64
-	image *ebiten.Image
+	speed  float64
+	image  *ebiten.Image
+	shadow *shadow.Shadow
 }
 
-func NewPlayer(image *ebiten.Image) *Player {
+func NewPlayer(image *ebiten.Image, shadow *shadow.Shadow) *Player {
 	return &Player{
 		speed:     10,
 		Rectangle: rectangle.New(600, 950-float64(image.Bounds().Dy()), float64(image.Bounds().Dx()), float64(image.Bounds().Dy())),
 		image:     image,
+		shadow:    shadow,
 	}
 }
 
@@ -26,6 +29,8 @@ func (player *Player) Update() {
 }
 
 func (player *Player) Draw(screen *ebiten.Image) {
+	player.shadow.Draw(screen, player.X, player.Y)
+
 	op := &ebiten.DrawImageOptions{}
 	op.GeoM.Translate(player.X, player.Y)
 	screen.DrawImage(player.image, op)

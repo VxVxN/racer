@@ -4,9 +4,10 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/VxVxN/game/internal/cargenerator"
+	"github.com/VxVxN/game/internal/shadow"
 	"github.com/VxVxN/game/pkg/audioplayer"
 	"github.com/VxVxN/game/pkg/background"
-	"github.com/VxVxN/game/pkg/player"
+	playerpkg "github.com/VxVxN/game/pkg/player"
 	"github.com/VxVxN/game/pkg/statisticer"
 	"github.com/VxVxN/game/pkg/textfield"
 	"github.com/VxVxN/gamedevlib/eventmanager"
@@ -17,6 +18,7 @@ import (
 	"golang.org/x/image/font/gofont/goregular"
 	"image"
 	"log"
+	"math/rand/v2"
 	"os"
 	"sort"
 	"time"
@@ -29,7 +31,7 @@ type Game struct {
 	scrollSpeed    float64
 	textFaceSource *text.GoTextFaceSource
 	eventManager   *eventmanager.EventManager
-	player         *player.Player
+	player         *playerpkg.Player
 	background     *background.Background
 	cars           *cargenerator.CarGenerator
 	stage          Stage
@@ -65,15 +67,28 @@ func NewGame() (*Game, error) {
 		return nil, fmt.Errorf("failed to init game elements image: %v", err)
 	}
 
-	playerCar := gameElementsSet.SubImage(image.Rect(0, 450, 110, 650)).(*ebiten.Image)
-	greenCar := gameElementsSet.SubImage(image.Rect(0, 0, 110, 220)).(*ebiten.Image)
-	orangeCar := gameElementsSet.SubImage(image.Rect(120, 0, 230, 220)).(*ebiten.Image)
-	redCar := gameElementsSet.SubImage(image.Rect(240, 0, 350, 220)).(*ebiten.Image)
-	grayCar := gameElementsSet.SubImage(image.Rect(360, 0, 470, 220)).(*ebiten.Image)
+	vehicleShadowsSet, _, err := ebitenutil.NewImageFromFile("assets/vehicleShadows.png")
+	if err != nil {
+		return nil, fmt.Errorf("failed to init game vehicle shadows image: %v", err)
+	}
 
-	player := player.NewPlayer(playerCar)
+	playerCar := gameElementsSet.SubImage(image.Rect(0, 450, 110, 650)).(*ebiten.Image)
+	greenCar := gameElementsSet.SubImage(image.Rect(0, 0, 110, 210)).(*ebiten.Image)
+	orangeCar := gameElementsSet.SubImage(image.Rect(120, 0, 230, 210)).(*ebiten.Image)
+	redCar := gameElementsSet.SubImage(image.Rect(240, 0, 350, 210)).(*ebiten.Image)
+	grayCar := gameElementsSet.SubImage(image.Rect(360, 0, 470, 210)).(*ebiten.Image)
+
+	sunDirection := shadow.DirectionShadow(rand.IntN(4))
+
+	playerShadowImage := vehicleShadowsSet.SubImage(image.Rect(145, 250, 250, 450)).(*ebiten.Image)
+	playerShadow := shadow.New(playerShadowImage, sunDirection)
+
+	carShadowImage := vehicleShadowsSet.SubImage(image.Rect(10, 0, 115, 195)).(*ebiten.Image)
+	carShadow := shadow.New(carShadowImage, sunDirection)
+
+	player := playerpkg.NewPlayer(playerCar, playerShadow)
 	startRoad := width/2 - float64(road.Bounds().Dx())/2
-	cars := cargenerator.New([]*ebiten.Image{greenCar, orangeCar, redCar, grayCar}, height, startRoad)
+	cars := cargenerator.New([]*ebiten.Image{greenCar, orangeCar, redCar, grayCar}, height, startRoad, carShadow)
 
 	ebiten.SetWindowSize(int(width), int(height))
 
@@ -130,9 +145,13 @@ func NewGame() (*Game, error) {
 		{
 			Text: "New game",
 			Action: func() {
+				sunDirection = shadow.DirectionShadow(rand.IntN(4))
+				playerShadow.SetDirection(sunDirection)
+				carShadow.SetDirection(sunDirection)
+
 				game.stage = GameStage
-				game.player.Reset()
-				game.cars.Reset()
+				game.player = playerpkg.NewPlayer(playerCar, playerShadow)
+				game.cars = cargenerator.New([]*ebiten.Image{greenCar, orangeCar, redCar, grayCar}, height, startRoad, carShadow)
 			},
 		},
 		{
