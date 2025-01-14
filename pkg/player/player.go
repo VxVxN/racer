@@ -18,7 +18,7 @@ type Player struct {
 func NewPlayer(image *ebiten.Image, shadow *shadow.Shadow) *Player {
 	return &Player{
 		speed:     10,
-		Rectangle: rectangle.New(600, 950-float64(image.Bounds().Dy()), float64(image.Bounds().Dx()), float64(image.Bounds().Dy())),
+		Rectangle: rectangle.New(0, 0, float64(image.Bounds().Dx()), float64(image.Bounds().Dy())),
 		image:     image,
 		shadow:    shadow,
 	}
@@ -34,6 +34,11 @@ func (player *Player) Draw(screen *ebiten.Image) {
 	op := &ebiten.DrawImageOptions{}
 	op.GeoM.Translate(player.X, player.Y)
 	screen.DrawImage(player.image, op)
+}
+
+func (player *Player) SetPosition(x, y float64) {
+	player.X = x
+	player.Y = y
 }
 
 func (player *Player) Move(key ebiten.Key) {

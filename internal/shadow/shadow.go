@@ -16,6 +16,7 @@ const (
 	SunRight
 	SunLeftStraight
 	SunRightStraight
+	NotSun
 )
 
 func New(img *ebiten.Image, direction DirectionShadow) *Shadow {

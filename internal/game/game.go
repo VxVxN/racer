@@ -8,15 +8,18 @@ import (
 	"github.com/VxVxN/game/pkg/audioplayer"
 	"github.com/VxVxN/game/pkg/background"
 	playerpkg "github.com/VxVxN/game/pkg/player"
+	"github.com/VxVxN/game/pkg/rectangle"
 	"github.com/VxVxN/game/pkg/statisticer"
 	"github.com/VxVxN/game/pkg/textfield"
 	"github.com/VxVxN/gamedevlib/eventmanager"
 	"github.com/VxVxN/gamedevlib/menu"
+	"github.com/VxVxN/gamedevlib/raycasting"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/hajimehoshi/ebiten/v2/text/v2"
 	"golang.org/x/image/font/gofont/goregular"
 	"image"
+	"image/color"
 	"log"
 	"math/rand/v2"
 	"os"
@@ -25,21 +28,25 @@ import (
 )
 
 type Game struct {
-	width, height  float64
-	playerCar      *ebiten.Image
-	globalTime     time.Time
-	scrollSpeed    float64
-	textFaceSource *text.GoTextFaceSource
-	eventManager   *eventmanager.EventManager
-	player         *playerpkg.Player
-	background     *background.Background
-	cars           *cargenerator.CarGenerator
-	stage          Stage
-	mainMenu       *menu.Menu
-	menu           *menu.Menu
-	statisticer    *statisticer.Statisticer
-	textField      *textfield.TextField
-	audioPlayer    *audioplayer.AudioPlayer
+	width, height              float64
+	startPlayerX, startPlayerY float64
+	globalTime                 time.Time
+	scrollSpeed                float64
+	textFaceSource             *text.GoTextFaceSource
+	eventManager               *eventmanager.EventManager
+	player                     *playerpkg.Player
+	background                 *background.Background
+	cars                       *cargenerator.CarGenerator
+	stage                      Stage
+	mainMenu                   *menu.Menu
+	menu                       *menu.Menu
+	statisticer                *statisticer.Statisticer
+	textField                  *textfield.TextField
+	audioPlayer                *audioplayer.AudioPlayer
+	nightImage                 *ebiten.Image
+	triangleImage              *ebiten.Image
+	objects                    []raycasting.Object
+	sunDirection               shadow.DirectionShadow
 }
 
 type Stage int
@@ -54,7 +61,9 @@ const (
 )
 
 func NewGame() (*Game, error) {
+	logger := log.Default()
 	w, h := ebiten.Monitor().Size()
+	logger.Printf("[INFO] Monitor size(%dx%d)", w, h)
 	width, height := float64(w), float64(h)
 
 	road, _, err := ebitenutil.NewImageFromFile("assets/road.png")
@@ -78,21 +87,17 @@ func NewGame() (*Game, error) {
 	redCar := gameElementsSet.SubImage(image.Rect(240, 0, 350, 210)).(*ebiten.Image)
 	grayCar := gameElementsSet.SubImage(image.Rect(360, 0, 470, 210)).(*ebiten.Image)
 
-	sunDirection := shadow.DirectionShadow(rand.IntN(4))
-
 	playerShadowImage := vehicleShadowsSet.SubImage(image.Rect(145, 250, 250, 450)).(*ebiten.Image)
-	playerShadow := shadow.New(playerShadowImage, sunDirection)
+	playerShadow := shadow.New(playerShadowImage, shadow.NotSun)
 
 	carShadowImage := vehicleShadowsSet.SubImage(image.Rect(10, 0, 115, 195)).(*ebiten.Image)
-	carShadow := shadow.New(carShadowImage, sunDirection)
+	carShadow := shadow.New(carShadowImage, shadow.NotSun)
 
-	player := playerpkg.NewPlayer(playerCar, playerShadow)
 	startRoad := width/2 - float64(road.Bounds().Dx())/2
-	cars := cargenerator.New([]*ebiten.Image{greenCar, orangeCar, redCar, grayCar}, height, startRoad, carShadow)
 
 	ebiten.SetWindowSize(int(width), int(height))
 
-	audioPlayer, err := audioplayer.NewAudioPlayer("music", log.Default())
+	audioPlayer, err := audioplayer.NewAudioPlayer("music", logger)
 	if err != nil {
 		return nil, fmt.Errorf("failed to init audio player: %v", err)
 	}
@@ -129,28 +134,39 @@ func NewGame() (*Game, error) {
 		width:          width,
 		height:         height,
 		background:     background.New(road, width),
-		playerCar:      playerCar,
 		globalTime:     time.Now(),
 		eventManager:   eventmanager.NewEventManager(supportedKeys),
-		player:         player,
-		cars:           cars,
 		textFaceSource: textFaceSource,
 		stage:          MainMenuStage,
 		statisticer:    statisticer.NewStatisticer(),
 		textField:      textField,
 		audioPlayer:    audioPlayer,
+		nightImage:     ebiten.NewImage(int(width), int(height)),
+		triangleImage:  ebiten.NewImage(int(width), int(height)),
 	}
+	m := color.RGBA{ // headlights
+		R: 255,
+		G: 255,
+		B: 255,
+		A: 100, // brightness of the headlights
+	}
+	game.triangleImage.Fill(m)
 
 	mainMenu, err := menu.NewMenu(width, height, menuTextFace, []menu.ButtonOptions{
 		{
 			Text: "New game",
 			Action: func() {
-				sunDirection = shadow.DirectionShadow(rand.IntN(4))
+				sunDirection := shadow.DirectionShadow(rand.IntN(6))
 				playerShadow.SetDirection(sunDirection)
 				carShadow.SetDirection(sunDirection)
+				game.sunDirection = sunDirection
 
 				game.stage = GameStage
 				game.player = playerpkg.NewPlayer(playerCar, playerShadow)
+				game.player.SetPosition(width/2-float64(playerCar.Bounds().Dx())/2, height/2)
+				game.startPlayerX = game.player.X
+				game.startPlayerY = game.player.Y
+
 				game.cars = cargenerator.New([]*ebiten.Image{greenCar, orangeCar, redCar, grayCar}, height, startRoad, carShadow)
 			},
 		},
@@ -343,6 +359,24 @@ func (game *Game) Draw(screen *ebiten.Image) {
 		text.Draw(screen, "Enter your name:", textFace, op)
 		game.textField.Draw(screen)
 	case GameStage, GameOverStage:
+		if game.sunDirection == shadow.NotSun {
+			game.nightImage.Fill(color.Black)
+			game.calculateObjects()
+			rays := raycasting.RayCasting(game.player.X, game.player.Y, game.objects)
+
+			// Subtract ray triangles from shadow
+			opt := &ebiten.DrawTrianglesOptions{}
+			opt.Address = ebiten.AddressRepeat
+			opt.Blend = ebiten.BlendDestinationOut
+			for i, line := range rays {
+				nextLine := rays[(i+1)%len(rays)]
+
+				// Draw triangle of area between rays
+				v := raycasting.RayVertices(game.player.X, game.player.Y, nextLine.X2, nextLine.Y2, line.X2, line.Y2)
+				game.nightImage.DrawTriangles(v, []uint16{0, 1, 2}, game.triangleImage, opt)
+			}
+		}
+
 		game.background.Draw(screen)
 		game.player.Draw(screen)
 		game.cars.Draw(screen)
@@ -356,6 +390,12 @@ func (game *Game) Draw(screen *ebiten.Image) {
 		op.ColorScale.Scale(0, 0, 0, 1)
 		op.LayoutOptions.PrimaryAlign = text.AlignCenter
 		text.Draw(screen, fmt.Sprintf("Points: %d", int(game.player.Points())), textFace, op)
+
+		if game.sunDirection == shadow.NotSun {
+			imageOp := &ebiten.DrawImageOptions{}
+			imageOp.ColorScale.ScaleAlpha(0.95)
+			screen.DrawImage(game.nightImage, imageOp)
+		}
 
 		if game.stage == GameOverStage {
 			textFace = &text.GoTextFace{
@@ -418,7 +458,7 @@ func (game *Game) addEvents() {
 	game.eventManager.AddPressEvent(ebiten.KeyDown, func() {
 		switch game.stage {
 		case GameStage:
-			if game.player.Y < game.height-250 {
+			if game.player.Y < game.height-210 {
 				game.player.Move(ebiten.KeyDown)
 			}
 		case GameOverStage:
@@ -466,4 +506,52 @@ func (game *Game) addEvents() {
 			game.stage = StatisticsStage
 		}
 	})
+}
+
+func (game *Game) calculateObjects() {
+	game.objects = []raycasting.Object{
+		ConvertRectangleToObject(*rectangle.New(0, 0, game.width, game.height)),
+		*raycasting.NewObject([]raycasting.Line{{ // right ray
+			float64(game.player.X) + 100,
+			float64(game.player.Y) + 2,
+			game.player.X - game.startPlayerX + game.width - 500,
+			game.player.Y - game.height}}),
+		*raycasting.NewObject([]raycasting.Line{{ // left ray
+			game.player.X,
+			float64(game.player.Y) + 2,
+			game.player.X - game.startPlayerX + 580,
+			game.player.Y - game.height}}),
+		*raycasting.NewObject([]raycasting.Line{{0, game.player.Y, game.width, float64(game.player.Y) + 2}}),
+	}
+}
+
+func ConvertRectangleToObject(rectangle rectangle.Rectangle) raycasting.Object {
+	return raycasting.Object{
+		Walls: []raycasting.Line{
+			{
+				X1: rectangle.X,
+				Y1: rectangle.Y,
+				X2: rectangle.X,
+				Y2: rectangle.Y + rectangle.Height,
+			},
+			{
+				X1: rectangle.X,
+				Y1: rectangle.Y + rectangle.Height,
+				X2: rectangle.X + rectangle.Width,
+				Y2: rectangle.Y + rectangle.Height,
+			},
+			{
+				X1: rectangle.X + rectangle.Width,
+				Y1: rectangle.Y + rectangle.Height,
+				X2: rectangle.X + rectangle.Width,
+				Y2: rectangle.Y,
+			},
+			{
+				X1: rectangle.X + rectangle.Width,
+				Y1: rectangle.Y,
+				X2: rectangle.X,
+				Y2: rectangle.Y,
+			},
+		},
+	}
 }

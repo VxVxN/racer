@@ -42,10 +42,6 @@ func NewAudioPlayer(dirName string, logger *log.Logger) (*AudioPlayer, error) {
 		logger:                logger,
 	}
 
-	if err = audioPlayer.nextMusic(); err != nil {
-		return nil, err
-	}
-
 	return audioPlayer, nil
 }
 
@@ -71,7 +67,7 @@ func (audioPlayer *AudioPlayer) nextMusic() error {
 	fileName := audioPlayer.notPlayMusicFileNames[playIndex]
 	audioPlayer.notPlayMusicFileNames = slices.Delete(audioPlayer.notPlayMusicFileNames, playIndex, playIndex+1)
 
-	musicFile, err := os.Open("music/" + fileName)
+	musicFile, err := os.Open("music/" + fileName) // todo optimize cache file
 	if err != nil {
 		return fmt.Errorf("failed to open music: %v", err)
 	}
@@ -97,6 +93,9 @@ func (audioPlayer *AudioPlayer) nextMusic() error {
 }
 
 func (audioPlayer *AudioPlayer) Play() {
+	if audioPlayer.player == nil {
+		_ = audioPlayer.nextMusic()
+	}
 	audioPlayer.player.Play()
 }
 

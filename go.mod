@@ -3,7 +3,7 @@ module github.com/VxVxN/game
 go 1.22.2
 
 require (
-	github.com/VxVxN/gamedevlib v0.0.0-20250106004313-16ffac376636
+	github.com/VxVxN/gamedevlib v0.0.0-20250114191433-04f9e2d64bf8
 	github.com/hajimehoshi/ebiten/v2 v2.8.6
 	golang.org/x/image v0.20.0
 )
