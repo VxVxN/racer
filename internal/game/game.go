@@ -3,6 +3,14 @@ package game
 import (
 	"bytes"
 	"fmt"
+	"image"
+	"image/color"
+	"log"
+	"math/rand/v2"
+	"os"
+	"sort"
+	"time"
+
 	"github.com/VxVxN/game/internal/cargenerator"
 	"github.com/VxVxN/game/internal/shadow"
 	"github.com/VxVxN/game/pkg/audioplayer"
@@ -18,13 +26,6 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/hajimehoshi/ebiten/v2/text/v2"
 	"golang.org/x/image/font/gofont/goregular"
-	"image"
-	"image/color"
-	"log"
-	"math/rand/v2"
-	"os"
-	"sort"
-	"time"
 )
 
 type Game struct {

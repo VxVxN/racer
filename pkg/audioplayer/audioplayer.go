@@ -2,12 +2,13 @@ package audioplayer
 
 import (
 	"fmt"
-	"github.com/hajimehoshi/ebiten/v2/audio"
-	"github.com/hajimehoshi/ebiten/v2/audio/mp3"
 	"log"
 	"math/rand/v2"
 	"os"
 	"slices"
+
+	"github.com/hajimehoshi/ebiten/v2/audio"
+	"github.com/hajimehoshi/ebiten/v2/audio/mp3"
 )
 
 const (

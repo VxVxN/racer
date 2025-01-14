@@ -1,9 +1,10 @@
 package main
 
 import (
+	"log"
+
 	"github.com/VxVxN/game/internal/game"
 	"github.com/hajimehoshi/ebiten/v2"
-	"log"
 )
 
 func main() {
