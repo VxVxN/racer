@@ -65,4 +65,9 @@ func (car *Car) Draw(screen *ebiten.Image) {
 
 func (car *Car) Reset() {
 	car.Y = -500
+	car.Rectangle = rectangle.New(car.startRoad+65, -500, float64(car.image.Bounds().Dx()), float64(car.image.Bounds().Dy()))
+}
+
+func (car *Car) SetSunDirection(sunDirection shadow.DirectionShadow) {
+	car.shadow.SetDirection(sunDirection)
 }

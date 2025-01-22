@@ -13,6 +13,7 @@ import (
 
 	"github.com/VxVxN/game/internal/cargenerator"
 	"github.com/VxVxN/game/internal/shadow"
+	"github.com/VxVxN/game/pkg/animation"
 	"github.com/VxVxN/game/pkg/audioplayer"
 	"github.com/VxVxN/game/pkg/background"
 	playerpkg "github.com/VxVxN/game/pkg/player"
@@ -23,6 +24,7 @@ import (
 	"github.com/VxVxN/gamedevlib/menu"
 	"github.com/VxVxN/gamedevlib/raycasting"
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/audio"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/hajimehoshi/ebiten/v2/text/v2"
 	"golang.org/x/image/font/gofont/goregular"
@@ -48,6 +50,8 @@ type Game struct {
 	triangleImage              *ebiten.Image
 	objects                    []raycasting.Object
 	sunDirection               shadow.DirectionShadow
+	explosionAnimation         *animation.Animation
+	logger                     *log.Logger
 }
 
 type Stage int
@@ -59,7 +63,28 @@ const (
 	MenuStage
 	StatisticsStage
 	SetPlayerRecordStage
+	ExplosionStage
+
+	sampleRate = 48000
 )
+
+func (s Stage) String() string {
+	switch s {
+	case GameStage:
+		return "GameStage"
+	case GameOverStage:
+		return "GameOverStage"
+	case MainMenuStage:
+		return "MainMenuStage"
+	case MenuStage:
+		return "MenuStage"
+	case StatisticsStage:
+		return "StatisticsStage"
+	case SetPlayerRecordStage:
+		return "SetPlayerRecordStage"
+	}
+	return ""
+}
 
 func NewGame() (*Game, error) {
 	logger := log.Default()
@@ -82,6 +107,11 @@ func NewGame() (*Game, error) {
 		return nil, fmt.Errorf("failed to init game vehicle shadows image: %v", err)
 	}
 
+	explosionSet, _, err := ebitenutil.NewImageFromFile("assets/explosion.png")
+	if err != nil {
+		return nil, fmt.Errorf("failed to init game explosion image: %v", err)
+	}
+
 	playerCar := gameElementsSet.SubImage(image.Rect(0, 450, 110, 650)).(*ebiten.Image)
 	greenCar := gameElementsSet.SubImage(image.Rect(0, 0, 110, 210)).(*ebiten.Image)
 	orangeCar := gameElementsSet.SubImage(image.Rect(120, 0, 230, 210)).(*ebiten.Image)
@@ -98,7 +128,9 @@ func NewGame() (*Game, error) {
 
 	ebiten.SetWindowSize(int(width), int(height))
 
-	audioPlayer, err := audioplayer.NewAudioPlayer("music", logger)
+	audioContext := audio.NewContext(sampleRate)
+
+	audioPlayer, err := audioplayer.NewAudioPlayer(audioContext, "music", logger)
 	if err != nil {
 		return nil, fmt.Errorf("failed to init audio player: %v", err)
 	}
@@ -131,20 +163,30 @@ func NewGame() (*Game, error) {
 	}
 
 	game := &Game{
-		scrollSpeed:    20.0,
-		width:          width,
-		height:         height,
-		background:     background.New(road, width),
-		globalTime:     time.Now(),
-		eventManager:   eventmanager.NewEventManager(supportedKeys),
-		textFaceSource: textFaceSource,
-		stage:          MainMenuStage,
-		statisticer:    statisticer.NewStatisticer(),
-		textField:      textField,
-		audioPlayer:    audioPlayer,
-		nightImage:     ebiten.NewImage(int(width), int(height)),
-		triangleImage:  ebiten.NewImage(int(width), int(height)),
+		scrollSpeed:        20.0,
+		width:              width,
+		height:             height,
+		background:         background.New(road, width),
+		globalTime:         time.Now(),
+		eventManager:       eventmanager.NewEventManager(supportedKeys),
+		textFaceSource:     textFaceSource,
+		stage:              MainMenuStage,
+		statisticer:        statisticer.NewStatisticer(),
+		textField:          textField,
+		audioPlayer:        audioPlayer,
+		nightImage:         ebiten.NewImage(int(width), int(height)),
+		triangleImage:      ebiten.NewImage(int(width), int(height)),
+		explosionAnimation: animation.NewAnimation(explosionSet, 0, 0, 910, 900, 6),
+		cars:               cargenerator.New([]*ebiten.Image{greenCar, orangeCar, redCar, grayCar}, height, startRoad, carShadow),
+		player:             playerpkg.NewPlayer(playerCar, playerShadow),
+		logger:             logger,
 	}
+	game.explosionAnimation.SetRepeatable(false)
+	game.explosionAnimation.SetScale(0.4, 0.4)
+	if err = game.explosionAnimation.SetSound(audioContext, "assets/sounds/silnyiy-vzryiv-starogo-doma.mp3"); err != nil {
+		return nil, fmt.Errorf("failed to set sound: %v", err)
+	}
+
 	m := color.RGBA{ // headlights
 		R: 255,
 		G: 255,
@@ -157,24 +199,13 @@ func NewGame() (*Game, error) {
 		{
 			Text: "New game",
 			Action: func() {
-				sunDirection := shadow.DirectionShadow(rand.IntN(6))
-				playerShadow.SetDirection(sunDirection)
-				carShadow.SetDirection(sunDirection)
-				game.sunDirection = sunDirection
-
-				game.stage = GameStage
-				game.player = playerpkg.NewPlayer(playerCar, playerShadow)
-				game.player.SetPosition(width/2-float64(playerCar.Bounds().Dx())/2, height/2)
-				game.startPlayerX = game.player.X
-				game.startPlayerY = game.player.Y
-
-				game.cars = cargenerator.New([]*ebiten.Image{greenCar, orangeCar, redCar, grayCar}, height, startRoad, carShadow)
+				game.Reset()
 			},
 		},
 		{
 			Text: "Player ratings",
 			Action: func() {
-				game.stage = StatisticsStage
+				game.setStage(StatisticsStage)
 			},
 		},
 		{
@@ -193,13 +224,13 @@ func NewGame() (*Game, error) {
 		{
 			Text: "Continue game",
 			Action: func() {
-				game.stage = GameStage
+				game.setStage(GameStage)
 			},
 		},
 		{
 			Text: "Go back to the main menu",
 			Action: func() {
-				game.stage = MainMenuStage
+				game.setStage(MainMenuStage)
 			},
 		},
 		{
@@ -226,9 +257,9 @@ func (game *Game) Update() error {
 	if time.Since(game.globalTime) < time.Second/time.Duration(64) {
 		return nil
 	}
-	if err := game.audioPlayer.Update(); err != nil {
-		log.Fatalf("Failed to update audio: %v", err)
-	}
+	//if err := game.audioPlayer.Update(); err != nil {
+	//	log.Fatalf("Failed to update audio: %v", err)
+	//}
 	if game.stage == SetPlayerRecordStage {
 		game.textField.Focus()
 		if err := game.textField.Update(); err != nil {
@@ -239,17 +270,32 @@ func (game *Game) Update() error {
 	if game.stage != GameStage {
 		return nil
 	}
+
+	game.explosionAnimation.Update(0.1)
+
+	if game.player.Dead() {
+		return nil
+	}
+
 	if game.cars.Collision(game.player.Rectangle) {
-		game.stage = GameOverStage
-		records, err := game.statisticer.Load()
-		if err != nil {
-			log.Fatalf("Failed to load statistics: %v", err)
-		}
-		_, isRecord := preparePlayerRatings(records, game.player.Name(), int(game.player.Points()))
-		if !isRecord {
-			return nil
-		}
-		game.stage = SetPlayerRecordStage
+		game.audioPlayer.Pause()
+		game.player.SetDead(true)
+		game.logger.Println("[DBG] Collision detected")
+		game.explosionAnimation.SetPosition(game.player.X*2.15, game.player.Y*2.15)
+		game.explosionAnimation.Start()
+		game.explosionAnimation.SetCallback(func() {
+			defer game.audioPlayer.Play()
+			game.setStage(GameOverStage)
+			records, err := game.statisticer.Load()
+			if err != nil {
+				log.Fatalf("Failed to load statistics: %v", err)
+			}
+			_, isRecord := preparePlayerRatings(records, game.player.Name(), int(game.player.Points()))
+			if !isRecord {
+				return
+			}
+			game.setStage(SetPlayerRecordStage)
+		})
 		return nil
 	}
 	game.globalTime = time.Now()
@@ -397,7 +443,7 @@ func (game *Game) Draw(screen *ebiten.Image) {
 			imageOp.ColorScale.ScaleAlpha(0.95)
 			screen.DrawImage(game.nightImage, imageOp)
 		}
-
+		game.explosionAnimation.Draw(screen)
 		if game.stage == GameOverStage {
 			textFace = &text.GoTextFace{
 				Source: game.textFaceSource,
@@ -476,24 +522,22 @@ func (game *Game) addEvents() {
 	game.eventManager.AddPressEvent(ebiten.KeyEscape, func() {
 		switch game.stage {
 		case GameStage, GameOverStage:
-			game.stage = MenuStage
+			game.setStage(MenuStage)
 		case StatisticsStage:
-			game.stage = MainMenuStage
+			game.setStage(MainMenuStage)
 		}
 	})
 	game.eventManager.AddPressedEvent(ebiten.KeyEnter, func() {
 		switch game.stage {
 		case GameStage:
 		case GameOverStage:
-			game.player.Reset()
-			game.cars.Reset()
-			game.stage = GameStage
+			game.Reset()
 		case MainMenuStage:
 			game.mainMenu.ClickActiveButton()
 		case MenuStage:
 			game.menu.ClickActiveButton()
 		case StatisticsStage:
-			game.stage = MainMenuStage
+			game.setStage(MainMenuStage)
 		case SetPlayerRecordStage:
 			game.player.SetName(game.textField.Text())
 			records, err := game.statisticer.Load()
@@ -504,7 +548,7 @@ func (game *Game) addEvents() {
 			if err := game.statisticer.Save(resultRecords); err != nil {
 				log.Fatalf("Failed to save results: %v", err)
 			}
-			game.stage = StatisticsStage
+			game.setStage(StatisticsStage)
 		}
 	})
 }
@@ -524,6 +568,11 @@ func (game *Game) calculateObjects() {
 			game.player.Y - game.height}}),
 		*raycasting.NewObject([]raycasting.Line{{0, game.player.Y, game.width, float64(game.player.Y) + 2}}),
 	}
+}
+
+func (game *Game) setStage(newStage Stage) {
+	game.stage = newStage
+	game.logger.Printf("[INFO] Setting stage to %v", newStage)
 }
 
 func ConvertRectangleToObject(rectangle rectangle.Rectangle) raycasting.Object {
@@ -555,4 +604,20 @@ func ConvertRectangleToObject(rectangle rectangle.Rectangle) raycasting.Object {
 			},
 		},
 	}
+}
+
+func (game *Game) Reset() {
+	sunDirection := shadow.DirectionShadow(rand.IntN(6))
+	game.sunDirection = sunDirection
+
+	game.setStage(GameStage)
+	game.player.Reset()
+	game.player.SetPosition(game.width/2-float64(game.player.Rectangle.Width)/2, game.height/2)
+	game.player.SetSunDirection(sunDirection)
+	game.startPlayerX = game.player.X
+	game.startPlayerY = game.player.Y
+
+	game.cars.Reset()
+	game.cars.SetSunDirection(sunDirection)
+	game.explosionAnimation.Reset()
 }

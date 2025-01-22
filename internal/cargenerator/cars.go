@@ -48,3 +48,9 @@ func (generator *CarGenerator) Reset() {
 		car.Reset()
 	}
 }
+
+func (generator *CarGenerator) SetSunDirection(sunDirection shadow.DirectionShadow) {
+	for _, car := range generator.cars {
+		car.SetSunDirection(sunDirection)
+	}
+}

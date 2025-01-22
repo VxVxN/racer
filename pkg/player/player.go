@@ -13,6 +13,7 @@ type Player struct {
 	speed  float64
 	image  *ebiten.Image
 	shadow *shadow.Shadow
+	dead   bool
 }
 
 func NewPlayer(image *ebiten.Image, shadow *shadow.Shadow) *Player {
@@ -61,6 +62,7 @@ func (player *Player) Points() float64 {
 
 func (player *Player) Reset() {
 	player.points = 0
+	player.dead = false
 }
 
 func (player *Player) SetName(name string) {
@@ -69,4 +71,16 @@ func (player *Player) SetName(name string) {
 
 func (player *Player) Name() string {
 	return player.name
+}
+
+func (player *Player) SetDead(dead bool) {
+	player.dead = dead
+}
+
+func (player *Player) Dead() bool {
+	return player.dead
+}
+
+func (player *Player) SetSunDirection(sunDirection shadow.DirectionShadow) {
+	player.shadow.SetDirection(sunDirection)
 }

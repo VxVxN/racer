@@ -11,10 +11,6 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/audio/mp3"
 )
 
-const (
-	sampleRate = 48000
-)
-
 type AudioPlayer struct {
 	audioContext          *audio.Context
 	player                *audio.Player
@@ -23,7 +19,7 @@ type AudioPlayer struct {
 	logger                *log.Logger
 }
 
-func NewAudioPlayer(dirName string, logger *log.Logger) (*AudioPlayer, error) {
+func NewAudioPlayer(audioContext *audio.Context, dirName string, logger *log.Logger) (*AudioPlayer, error) {
 	files, err := os.ReadDir(dirName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read music directory: %v", err)
@@ -37,7 +33,7 @@ func NewAudioPlayer(dirName string, logger *log.Logger) (*AudioPlayer, error) {
 	}
 
 	audioPlayer := &AudioPlayer{
-		audioContext:          audio.NewContext(sampleRate),
+		audioContext:          audioContext,
 		allMusicFiles:         allMusicFiles,
 		notPlayMusicFileNames: notPlayMusicFileNames,
 		logger:                logger,
