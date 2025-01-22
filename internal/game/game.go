@@ -31,7 +31,7 @@ import (
 )
 
 type Game struct {
-	width, height              float64
+	windowWidth, windowHeight  float64
 	startPlayerX, startPlayerY float64
 	globalTime                 time.Time
 	scrollSpeed                float64
@@ -63,7 +63,6 @@ const (
 	MenuStage
 	StatisticsStage
 	SetPlayerRecordStage
-	ExplosionStage
 
 	sampleRate = 48000
 )
@@ -164,8 +163,8 @@ func NewGame() (*Game, error) {
 
 	game := &Game{
 		scrollSpeed:        20.0,
-		width:              width,
-		height:             height,
+		windowWidth:        width,
+		windowHeight:       height,
 		background:         background.New(road, width),
 		globalTime:         time.Now(),
 		eventManager:       eventmanager.NewEventManager(supportedKeys),
@@ -257,9 +256,9 @@ func (game *Game) Update() error {
 	if time.Since(game.globalTime) < time.Second/time.Duration(64) {
 		return nil
 	}
-	//if err := game.audioPlayer.Update(); err != nil {
-	//	log.Fatalf("Failed to update audio: %v", err)
-	//}
+	if err := game.audioPlayer.Update(); err != nil {
+		log.Fatalf("Failed to update audio: %v", err)
+	}
 	if game.stage == SetPlayerRecordStage {
 		game.textField.Focus()
 		if err := game.textField.Update(); err != nil {
@@ -338,124 +337,14 @@ func (game *Game) Draw(screen *ebiten.Image) {
 	switch game.stage {
 	case MainMenuStage:
 		game.mainMenu.Draw(screen)
-		return
 	case MenuStage:
 		game.menu.Draw(screen)
-		return
 	case StatisticsStage:
-		records, err := game.statisticer.Load()
-		if err != nil {
-			log.Fatalf("Failed to load statistics: %v", err)
-		}
-		textFace := &text.GoTextFace{
-			Source: game.textFaceSource,
-			Size:   48,
-		}
-
-		op := &text.DrawOptions{}
-		op.GeoM.Translate(game.width/2, 100)
-		op.ColorScale.Scale(255, 255, 255, 1)
-		op.LayoutOptions.PrimaryAlign = text.AlignCenter
-		text.Draw(screen, "Player ratings:", textFace, op)
-
-		textFace = &text.GoTextFace{
-			Source: game.textFaceSource,
-			Size:   24,
-		}
-
-		op = &text.DrawOptions{}
-		op.GeoM.Translate(game.width/2, 200)
-		op.ColorScale.Scale(255, 255, 255, 1)
-		op.LayoutOptions.PrimaryAlign = text.AlignCenter
-		text.Draw(screen, "Name: Points", textFace, op)
-
-		for i, record := range records {
-			textFace = &text.GoTextFace{
-				Source: game.textFaceSource,
-				Size:   24,
-			}
-
-			op = &text.DrawOptions{}
-			op.GeoM.Translate(game.width/2, 250+float64(i*48))
-			op.ColorScale.Scale(255, 255, 255, 1)
-			op.LayoutOptions.PrimaryAlign = text.AlignCenter
-			text.Draw(screen, fmt.Sprintf("%d) %s: %d", i+1, record.Name, record.Points), textFace, op)
-		}
-		return
+		game.drawStatisticsStage(screen)
 	case SetPlayerRecordStage:
-		textFace := &text.GoTextFace{
-			Source: game.textFaceSource,
-			Size:   24,
-		}
-
-		op := &text.DrawOptions{}
-		op.GeoM.Translate(game.width/2, 50)
-		op.ColorScale.Scale(255, 255, 255, 1)
-		op.LayoutOptions.PrimaryAlign = text.AlignCenter
-		text.Draw(screen, fmt.Sprintf("Your new record: %d", int(game.player.Points())), textFace, op)
-
-		textFace = &text.GoTextFace{
-			Source: game.textFaceSource,
-			Size:   24,
-		}
-
-		op = &text.DrawOptions{}
-		op.GeoM.Translate(game.width/2, 100)
-		op.ColorScale.Scale(255, 255, 255, 1)
-		op.LayoutOptions.PrimaryAlign = text.AlignCenter
-		text.Draw(screen, "Enter your name:", textFace, op)
-		game.textField.Draw(screen)
+		game.drawSetPlayerRecordStage(screen)
 	case GameStage, GameOverStage:
-		if game.sunDirection == shadow.NotSun {
-			game.nightImage.Fill(color.Black)
-			game.calculateObjects()
-			rays := raycasting.RayCasting(game.player.X, game.player.Y, game.objects)
-
-			// Subtract ray triangles from shadow
-			opt := &ebiten.DrawTrianglesOptions{}
-			opt.Address = ebiten.AddressRepeat
-			opt.Blend = ebiten.BlendDestinationOut
-			for i, line := range rays {
-				nextLine := rays[(i+1)%len(rays)]
-
-				// Draw triangle of area between rays
-				v := raycasting.RayVertices(game.player.X, game.player.Y, nextLine.X2, nextLine.Y2, line.X2, line.Y2)
-				game.nightImage.DrawTriangles(v, []uint16{0, 1, 2}, game.triangleImage, opt)
-			}
-		}
-
-		game.background.Draw(screen)
-		game.player.Draw(screen)
-		game.cars.Draw(screen)
-		textFace := &text.GoTextFace{
-			Source: game.textFaceSource,
-			Size:   24,
-		}
-
-		op := &text.DrawOptions{}
-		op.GeoM.Translate(game.width/2, 0)
-		op.ColorScale.Scale(0, 0, 0, 1)
-		op.LayoutOptions.PrimaryAlign = text.AlignCenter
-		text.Draw(screen, fmt.Sprintf("Points: %d", int(game.player.Points())), textFace, op)
-
-		if game.sunDirection == shadow.NotSun {
-			imageOp := &ebiten.DrawImageOptions{}
-			imageOp.ColorScale.ScaleAlpha(0.95)
-			screen.DrawImage(game.nightImage, imageOp)
-		}
-		game.explosionAnimation.Draw(screen)
-		if game.stage == GameOverStage {
-			textFace = &text.GoTextFace{
-				Source: game.textFaceSource,
-				Size:   64,
-			}
-
-			op = &text.DrawOptions{}
-			op.GeoM.Translate(game.width/2, game.height/2)
-			op.ColorScale.Scale(255, 0, 0, 1)
-			op.LayoutOptions.PrimaryAlign = text.AlignCenter
-			text.Draw(screen, "Game over", textFace, op)
-		}
+		game.drawGameStage(screen)
 	default:
 	}
 }
@@ -468,7 +357,7 @@ func (game *Game) addEvents() {
 	game.eventManager.AddPressEvent(ebiten.KeyRight, func() {
 		switch game.stage {
 		case GameStage:
-			if game.player.X < game.width/2+370 {
+			if game.player.X < game.windowWidth/2+370 {
 				game.player.Move(ebiten.KeyRight)
 			}
 		case GameOverStage:
@@ -478,7 +367,7 @@ func (game *Game) addEvents() {
 	game.eventManager.AddPressEvent(ebiten.KeyLeft, func() {
 		switch game.stage {
 		case GameStage:
-			if game.player.X > game.width/2-480 {
+			if game.player.X > game.windowWidth/2-480 {
 				game.player.Move(ebiten.KeyLeft)
 			}
 		case GameOverStage:
@@ -505,7 +394,7 @@ func (game *Game) addEvents() {
 	game.eventManager.AddPressEvent(ebiten.KeyDown, func() {
 		switch game.stage {
 		case GameStage:
-			if game.player.Y < game.height-210 {
+			if game.player.Y < game.windowHeight-210 {
 				game.player.Move(ebiten.KeyDown)
 			}
 		case GameOverStage:
@@ -555,18 +444,18 @@ func (game *Game) addEvents() {
 
 func (game *Game) calculateObjects() {
 	game.objects = []raycasting.Object{
-		ConvertRectangleToObject(*rectangle.New(0, 0, game.width, game.height)),
+		ConvertRectangleToObject(*rectangle.New(0, 0, game.windowWidth, game.windowHeight)),
 		*raycasting.NewObject([]raycasting.Line{{ // right ray
 			float64(game.player.X) + 100,
 			float64(game.player.Y) + 2,
-			game.player.X - game.startPlayerX + game.width - 500,
-			game.player.Y - game.height}}),
+			game.player.X - game.startPlayerX + game.windowWidth - 500,
+			game.player.Y - game.windowHeight}}),
 		*raycasting.NewObject([]raycasting.Line{{ // left ray
 			game.player.X,
 			float64(game.player.Y) + 2,
 			game.player.X - game.startPlayerX + 580,
-			game.player.Y - game.height}}),
-		*raycasting.NewObject([]raycasting.Line{{0, game.player.Y, game.width, float64(game.player.Y) + 2}}),
+			game.player.Y - game.windowHeight}}),
+		*raycasting.NewObject([]raycasting.Line{{0, game.player.Y, game.windowWidth, float64(game.player.Y) + 2}}),
 	}
 }
 
@@ -612,7 +501,7 @@ func (game *Game) Reset() {
 
 	game.setStage(GameStage)
 	game.player.Reset()
-	game.player.SetPosition(game.width/2-float64(game.player.Rectangle.Width)/2, game.height/2)
+	game.player.SetPosition(game.windowWidth/2-float64(game.player.Rectangle.Width)/2, game.windowHeight/2)
 	game.player.SetSunDirection(sunDirection)
 	game.startPlayerX = game.player.X
 	game.startPlayerY = game.player.Y
