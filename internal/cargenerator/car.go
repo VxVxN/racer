@@ -1,8 +1,6 @@
 package cargenerator
 
 import (
-	"math/rand/v2"
-
 	"github.com/VxVxN/game/internal/shadow"
 	"github.com/VxVxN/game/pkg/rectangle"
 	"github.com/hajimehoshi/ebiten/v2"
@@ -28,7 +26,7 @@ const (
 
 func newCar(image *ebiten.Image, screenHeight, startRoad float64, shadow *shadow.Shadow) *Car {
 	return &Car{
-		Rectangle:    rectangle.New(startRoad+65, -500, float64(image.Bounds().Dx()), float64(image.Bounds().Dy())),
+		Rectangle:    rectangle.New(0, 0, float64(image.Bounds().Dx()), float64(image.Bounds().Dy())),
 		screenHeight: screenHeight,
 		startRoad:    startRoad,
 		image:        image,
@@ -38,21 +36,6 @@ func newCar(image *ebiten.Image, screenHeight, startRoad float64, shadow *shadow
 
 func (car *Car) Update(scrollSpeed float64) {
 	car.Y += scrollSpeed
-	if car.Y > car.screenHeight {
-		car.Y = float64(rand.IntN(400) - 930)
-		switch roadLane(rand.IntN(5)) {
-		case FirstLane:
-			car.X = car.startRoad + 65
-		case SecondLane:
-			car.X = car.startRoad + 265
-		case ThirdLane:
-			car.X = car.startRoad + 465
-		case FourthLane:
-			car.X = car.startRoad + 655
-		case FifthLane:
-			car.X = car.startRoad + 855
-		}
-	}
 }
 
 func (car *Car) Draw(screen *ebiten.Image) {
@@ -61,11 +44,6 @@ func (car *Car) Draw(screen *ebiten.Image) {
 	op := &ebiten.DrawImageOptions{}
 	op.GeoM.Translate(car.X, car.Y)
 	screen.DrawImage(car.image, op)
-}
-
-func (car *Car) Reset() {
-	car.Y = -500
-	car.Rectangle = rectangle.New(car.startRoad+65, -500, float64(car.image.Bounds().Dx()), float64(car.image.Bounds().Dy()))
 }
 
 func (car *Car) SetSunDirection(sunDirection shadow.DirectionShadow) {

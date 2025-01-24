@@ -357,7 +357,7 @@ func (game *Game) addEvents() {
 	game.eventManager.AddPressEvent(ebiten.KeyRight, func() {
 		switch game.stage {
 		case GameStage:
-			if game.player.X < game.windowWidth/2+370 {
+			if !game.player.Dead() && game.player.X < game.windowWidth/2+370 {
 				game.player.Move(ebiten.KeyRight)
 			}
 		case GameOverStage:
@@ -367,7 +367,7 @@ func (game *Game) addEvents() {
 	game.eventManager.AddPressEvent(ebiten.KeyLeft, func() {
 		switch game.stage {
 		case GameStage:
-			if game.player.X > game.windowWidth/2-480 {
+			if !game.player.Dead() && game.player.X > game.windowWidth/2-480 {
 				game.player.Move(ebiten.KeyLeft)
 			}
 		case GameOverStage:
@@ -377,7 +377,7 @@ func (game *Game) addEvents() {
 	game.eventManager.AddPressEvent(ebiten.KeyUp, func() {
 		switch game.stage {
 		case GameStage:
-			if game.player.Y > 0 {
+			if !game.player.Dead() && game.player.Y > 0 {
 				game.player.Move(ebiten.KeyUp)
 			}
 		case GameOverStage:
@@ -394,7 +394,7 @@ func (game *Game) addEvents() {
 	game.eventManager.AddPressEvent(ebiten.KeyDown, func() {
 		switch game.stage {
 		case GameStage:
-			if game.player.Y < game.windowHeight-210 {
+			if !game.player.Dead() && game.player.Y < game.windowHeight-210 {
 				game.player.Move(ebiten.KeyDown)
 			}
 		case GameOverStage:

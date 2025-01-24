@@ -1,6 +1,8 @@
 package cargenerator
 
 import (
+	"math/rand/v2"
+
 	"github.com/VxVxN/game/internal/shadow"
 	"github.com/VxVxN/game/pkg/rectangle"
 	"github.com/hajimehoshi/ebiten/v2"
@@ -12,19 +14,55 @@ type CarGenerator struct {
 }
 
 func New(images []*ebiten.Image, screenHeight, startRoad float64, carShadow *shadow.Shadow) *CarGenerator {
-	cars := make([]*Car, 0, len(images))
-	for _, image := range images {
-		cars = append(cars, newCar(image, screenHeight, startRoad, carShadow))
-	}
-	return &CarGenerator{
-		cars:         cars,
+	carGenerator := &CarGenerator{
 		screenHeight: screenHeight,
 	}
+
+	carGenerator.cars = make([]*Car, 0, len(images))
+	for _, image := range images {
+		car := newCar(image, screenHeight, startRoad, carShadow)
+		carGenerator.cars = append(carGenerator.cars, car)
+	}
+	return carGenerator
 }
 
 func (generator *CarGenerator) Update(scrollSpeed float64) {
-	for _, car := range generator.cars {
+	for i, car := range generator.cars {
 		car.Update(scrollSpeed)
+		if car.Y > car.screenHeight {
+			generator.spawnCar(car, i)
+		}
+	}
+}
+
+func (generator *CarGenerator) spawnCar(car *Car, i int) {
+	for {
+		car.Y = float64(rand.IntN(400) - 930)
+		switch roadLane(rand.IntN(5)) {
+		case FirstLane:
+			car.X = car.startRoad + 65
+		case SecondLane:
+			car.X = car.startRoad + 265
+		case ThirdLane:
+			car.X = car.startRoad + 465
+		case FourthLane:
+			car.X = car.startRoad + 655
+		case FifthLane:
+			car.X = car.startRoad + 855
+		}
+		var isCollision bool
+		for j, c := range generator.cars {
+			if i == j {
+				continue
+			}
+			if car.Collision(c.Rectangle) {
+				isCollision = true
+				break
+			}
+		}
+		if !isCollision {
+			break
+		}
 	}
 }
 
@@ -44,8 +82,8 @@ func (generator *CarGenerator) Collision(rectangle *rectangle.Rectangle) bool {
 }
 
 func (generator *CarGenerator) Reset() {
-	for _, car := range generator.cars {
-		car.Reset()
+	for i, car := range generator.cars {
+		generator.spawnCar(car, i)
 	}
 }
 
