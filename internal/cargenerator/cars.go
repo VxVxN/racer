@@ -11,16 +11,21 @@ import (
 type CarGenerator struct {
 	screenHeight float64
 	cars         []*Car
+	freeLane     [5]int
 }
 
-func New(images []*ebiten.Image, screenHeight, startRoad float64, carShadow *shadow.Shadow) *CarGenerator {
+func New(carImages, truckImages []*ebiten.Image, screenHeight, startRoad float64, carShadow, truckShadow *shadow.Shadow) *CarGenerator {
 	carGenerator := &CarGenerator{
 		screenHeight: screenHeight,
 	}
 
-	carGenerator.cars = make([]*Car, 0, len(images))
-	for _, image := range images {
+	carGenerator.cars = make([]*Car, 0, len(carImages))
+	for _, image := range carImages {
 		car := newCar(image, screenHeight, startRoad, carShadow)
+		carGenerator.cars = append(carGenerator.cars, car)
+	}
+	for _, image := range truckImages {
+		car := newCar(image, screenHeight, startRoad, truckShadow)
 		carGenerator.cars = append(carGenerator.cars, car)
 	}
 	return carGenerator
@@ -36,20 +41,30 @@ func (generator *CarGenerator) Update(scrollSpeed float64) {
 }
 
 func (generator *CarGenerator) spawnCar(car *Car, i int) {
+	if car.lane != NoLane {
+		generator.freeLane[car.lane]--
+	}
 	for {
-		car.Y = float64(rand.IntN(400) - 930)
-		switch roadLane(rand.IntN(5)) {
-		case FirstLane:
-			car.X = car.startRoad + 65
-		case SecondLane:
-			car.X = car.startRoad + 265
-		case ThirdLane:
-			car.X = car.startRoad + 465
-		case FourthLane:
-			car.X = car.startRoad + 655
-		case FifthLane:
-			car.X = car.startRoad + 855
+		car.Y = float64(-200 - rand.IntN(1800))
+
+		lane := roadLane(rand.IntN(5))
+		car.X = car.startRoad + float64(lane)*200 + 65 // 200 - this is the interval between the bands
+
+		if generator.freeLane[lane] == 3 {
+			continue
 		}
+		var availableLane bool
+		for i, lineCarCounter := range generator.freeLane {
+			if lineCarCounter == 0 && roadLane(i) != lane {
+				availableLane = true
+				break
+			}
+		}
+		if !availableLane {
+			continue
+		}
+		car.lane = lane
+		generator.freeLane[lane]++
 		var isCollision bool
 		for j, c := range generator.cars {
 			if i == j {
@@ -60,9 +75,11 @@ func (generator *CarGenerator) spawnCar(car *Car, i int) {
 				break
 			}
 		}
-		if !isCollision {
-			break
+		if isCollision {
+			generator.freeLane[car.lane]--
+			continue
 		}
+		break
 	}
 }
 

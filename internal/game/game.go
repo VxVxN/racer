@@ -116,12 +116,16 @@ func NewGame() (*Game, error) {
 	orangeCar := gameElementsSet.SubImage(image.Rect(120, 0, 230, 210)).(*ebiten.Image)
 	redCar := gameElementsSet.SubImage(image.Rect(240, 0, 350, 210)).(*ebiten.Image)
 	grayCar := gameElementsSet.SubImage(image.Rect(360, 0, 470, 210)).(*ebiten.Image)
+	redTruck := gameElementsSet.SubImage(image.Rect(480, 0, 590, 260)).(*ebiten.Image)
 
 	playerShadowImage := vehicleShadowsSet.SubImage(image.Rect(145, 250, 250, 450)).(*ebiten.Image)
 	playerShadow := shadow.New(playerShadowImage, shadow.NotSun)
 
 	carShadowImage := vehicleShadowsSet.SubImage(image.Rect(10, 0, 115, 195)).(*ebiten.Image)
 	carShadow := shadow.New(carShadowImage, shadow.NotSun)
+
+	truckShadowImage := vehicleShadowsSet.SubImage(image.Rect(140, 0, 255, 245)).(*ebiten.Image)
+	truckShadow := shadow.New(truckShadowImage, shadow.NotSun)
 
 	startRoad := width/2 - float64(road.Bounds().Dx())/2
 
@@ -162,7 +166,7 @@ func NewGame() (*Game, error) {
 	}
 
 	game := &Game{
-		scrollSpeed:        20.0,
+		scrollSpeed:        15.0,
 		windowWidth:        width,
 		windowHeight:       height,
 		background:         background.New(road, width),
@@ -176,7 +180,7 @@ func NewGame() (*Game, error) {
 		nightImage:         ebiten.NewImage(int(width), int(height)),
 		triangleImage:      ebiten.NewImage(int(width), int(height)),
 		explosionAnimation: animation.NewAnimation(explosionSet, 0, 0, 910, 900, 6),
-		cars:               cargenerator.New([]*ebiten.Image{greenCar, orangeCar, redCar, grayCar}, height, startRoad, carShadow),
+		cars:               cargenerator.New([]*ebiten.Image{greenCar, orangeCar, redCar, grayCar}, []*ebiten.Image{redTruck}, height, startRoad, carShadow, truckShadow),
 		player:             playerpkg.NewPlayer(playerCar, playerShadow),
 		logger:             logger,
 	}

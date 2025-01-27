@@ -12,12 +12,14 @@ type Car struct {
 	*rectangle.Rectangle
 	image  *ebiten.Image
 	shadow *shadow.Shadow
+	lane   roadLane
 }
 
 type roadLane int
 
 const (
-	FirstLane roadLane = iota
+	NoLane roadLane = iota - 1
+	FirstLane
 	SecondLane
 	ThirdLane
 	FourthLane
@@ -31,6 +33,7 @@ func newCar(image *ebiten.Image, screenHeight, startRoad float64, shadow *shadow
 		startRoad:    startRoad,
 		image:        image,
 		shadow:       shadow,
+		lane:         NoLane,
 	}
 }
 
