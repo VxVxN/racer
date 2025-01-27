@@ -14,7 +14,7 @@ type CarGenerator struct {
 	freeLane     [5]int
 }
 
-func New(carImages, truckImages []*ebiten.Image, screenHeight, startRoad float64, carShadow, truckShadow *shadow.Shadow) *CarGenerator {
+func New(carImages, truckImages, longTruckImages []*ebiten.Image, screenHeight, startRoad float64, carShadow, truckShadow, longTruckShadow *shadow.Shadow) *CarGenerator {
 	carGenerator := &CarGenerator{
 		screenHeight: screenHeight,
 	}
@@ -26,6 +26,10 @@ func New(carImages, truckImages []*ebiten.Image, screenHeight, startRoad float64
 	}
 	for _, image := range truckImages {
 		car := newCar(image, screenHeight, startRoad, truckShadow)
+		carGenerator.cars = append(carGenerator.cars, car)
+	}
+	for _, image := range longTruckImages {
+		car := newCar(image, screenHeight, startRoad, longTruckShadow)
 		carGenerator.cars = append(carGenerator.cars, car)
 	}
 	return carGenerator

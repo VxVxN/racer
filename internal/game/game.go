@@ -118,8 +118,11 @@ func NewGame() (*Game, error) {
 	redCar := gameElementsSet.SubImage(image.Rect(240, 0, 350, 210)).(*ebiten.Image)
 	grayCar := gameElementsSet.SubImage(image.Rect(360, 0, 470, 210)).(*ebiten.Image)
 
-	redTruck := gameElementsSet.SubImage(image.Rect(475, 0, 590, 260)).(*ebiten.Image)
-	greenTruck := gameElementsSet.SubImage(image.Rect(600, 0, 715, 260)).(*ebiten.Image)
+	redTruck := gameElementsSet.SubImage(image.Rect(475, 0, 595, 260)).(*ebiten.Image)
+	greenTruck := gameElementsSet.SubImage(image.Rect(600, 0, 720, 260)).(*ebiten.Image)
+
+	blueLongTruck := gameElementsSet.SubImage(image.Rect(760, 0, 900, 425)).(*ebiten.Image)
+	greenLongTruck := gameElementsSet.SubImage(image.Rect(900, 0, 1030, 425)).(*ebiten.Image)
 
 	playerShadowImage := vehicleShadowsSet.SubImage(image.Rect(145, 250, 250, 450)).(*ebiten.Image)
 	playerShadow := shadow.New(playerShadowImage, shadow.NotSun)
@@ -129,6 +132,9 @@ func NewGame() (*Game, error) {
 
 	truckShadowImage := vehicleShadowsSet.SubImage(image.Rect(140, 0, 255, 245)).(*ebiten.Image)
 	truckShadow := shadow.New(truckShadowImage, shadow.NotSun)
+
+	longTruckShadowImage := vehicleShadowsSet.SubImage(image.Rect(280, 0, 385, 445)).(*ebiten.Image)
+	longTruckShadow := shadow.New(longTruckShadowImage, shadow.NotSun)
 
 	startRoad := width/2 - float64(road.Bounds().Dx())/2
 
@@ -183,7 +189,7 @@ func NewGame() (*Game, error) {
 		nightImage:         ebiten.NewImage(int(width), int(height)),
 		triangleImage:      ebiten.NewImage(int(width), int(height)),
 		explosionAnimation: animation.NewAnimation(explosionSet, 0, 0, 910, 900, 6),
-		cars:               cargenerator.New([]*ebiten.Image{greenCar, orangeCar, redCar, grayCar}, []*ebiten.Image{redTruck, greenTruck}, height, startRoad, carShadow, truckShadow),
+		cars:               cargenerator.New([]*ebiten.Image{greenCar, orangeCar, redCar, grayCar}, []*ebiten.Image{redTruck, greenTruck}, []*ebiten.Image{blueLongTruck, greenLongTruck}, height, startRoad, carShadow, truckShadow, longTruckShadow),
 		player:             playerpkg.NewPlayer(playerCar, playerShadow),
 		logger:             logger,
 	}
