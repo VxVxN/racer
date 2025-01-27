@@ -9,7 +9,6 @@ import (
 	"math/rand/v2"
 	"os"
 	"sort"
-	"time"
 
 	"github.com/VxVxN/game/internal/cargenerator"
 	"github.com/VxVxN/game/internal/shadow"
@@ -33,7 +32,6 @@ import (
 type Game struct {
 	windowWidth, windowHeight  float64
 	startPlayerX, startPlayerY float64
-	globalTime                 time.Time
 	scrollSpeed                float64
 	textFaceSource             *text.GoTextFaceSource
 	eventManager               *eventmanager.EventManager
@@ -52,6 +50,7 @@ type Game struct {
 	sunDirection               shadow.DirectionShadow
 	explosionAnimation         *animation.Animation
 	logger                     *log.Logger
+	//globalTime                 time.Time
 }
 
 type Stage int
@@ -175,11 +174,11 @@ func NewGame() (*Game, error) {
 	}
 
 	game := &Game{
-		scrollSpeed:        15.0,
-		windowWidth:        width,
-		windowHeight:       height,
-		background:         background.New(road, width),
-		globalTime:         time.Now(),
+		scrollSpeed:  10.0,
+		windowWidth:  width,
+		windowHeight: height,
+		background:   background.New(road, width),
+		//globalTime:         time.Now(),
 		eventManager:       eventmanager.NewEventManager(supportedKeys),
 		textFaceSource:     textFaceSource,
 		stage:              MainMenuStage,
@@ -266,9 +265,9 @@ func NewGame() (*Game, error) {
 
 func (game *Game) Update() error {
 	game.eventManager.Update()
-	if time.Since(game.globalTime) < time.Second/time.Duration(64) {
-		return nil
-	}
+	//if time.Since(game.globalTime) < time.Second/time.Duration(60) {
+	//	return nil
+	//}
 	if err := game.audioPlayer.Update(); err != nil {
 		log.Fatalf("Failed to update audio: %v", err)
 	}
@@ -310,7 +309,7 @@ func (game *Game) Update() error {
 		})
 		return nil
 	}
-	game.globalTime = time.Now()
+	//game.globalTime = time.Now()
 	game.background.Update(game.scrollSpeed)
 	game.player.Update()
 	game.cars.Update(game.scrollSpeed - 3)
