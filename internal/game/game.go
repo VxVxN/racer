@@ -6,7 +6,6 @@ import (
 	"image"
 	"image/color"
 	"log"
-	"math/rand/v2"
 	"os"
 	"sort"
 
@@ -22,6 +21,9 @@ import (
 	"github.com/VxVxN/gamedevlib/eventmanager"
 	"github.com/VxVxN/gamedevlib/menu"
 	"github.com/VxVxN/gamedevlib/raycasting"
+	"github.com/ebitenui/ebitenui"
+	//uiimage "github.com/ebitenui/ebitenui/image"
+	"github.com/ebitenui/ebitenui/widget"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/audio"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
@@ -30,6 +32,9 @@ import (
 )
 
 type Game struct {
+	mainMenuUI                 *ebitenui.UI
+	menuUI                     *ebitenui.UI
+	mainMenuButtons            *ButtonControl
 	windowWidth, windowHeight  float64
 	startPlayerX, startPlayerY float64
 	scrollSpeed                float64
@@ -39,8 +44,7 @@ type Game struct {
 	background                 *background.Background
 	cars                       *cargenerator.CarGenerator
 	stage                      Stage
-	mainMenu                   *menu.Menu
-	menu                       *menu.Menu
+	menu                       *menu.Menu // todo remove it
 	statisticer                *statisticer.Statisticer
 	textField                  *textfield.TextField
 	audioPlayer                *audioplayer.AudioPlayer
@@ -62,6 +66,7 @@ const (
 	MenuStage
 	StatisticsStage
 	SetPlayerRecordStage
+	SettingsStage
 
 	sampleRate = 48000
 )
@@ -206,30 +211,12 @@ func NewGame() (*Game, error) {
 	}
 	game.triangleImage.Fill(m)
 
-	mainMenu, err := menu.NewMenu(width, height, menuTextFace, []menu.ButtonOptions{
-		{
-			Text: "New game",
-			Action: func() {
-				game.Reset()
-			},
-		},
-		{
-			Text: "Player ratings",
-			Action: func() {
-				game.setStage(StatisticsStage)
-			},
-		},
-		{
-			Text: "Exit",
-			Action: func() {
-				os.Exit(0)
-			},
-		}}, menu.MenuOptions{
-		ButtonPadding: 20,
-	})
+	res, err := newUIResources()
 	if err != nil {
-		return nil, fmt.Errorf("failed new main menu: %v", err)
+		return nil, err
 	}
+
+	game.mainMenuUI = createUI("Racer", res, mainPage(game, res))
 
 	menu, err := menu.NewMenu(width, height, menuTextFace, []menu.ButtonOptions{
 		{
@@ -252,18 +239,15 @@ func NewGame() (*Game, error) {
 		}}, menu.MenuOptions{
 		ButtonPadding: 20,
 	})
-	if err != nil {
-		return nil, fmt.Errorf("failed new menu: %v", err)
-	}
-
-	game.mainMenu = mainMenu
 	game.menu = menu
+
 	game.addEvents()
 
 	return game, nil
 }
 
 func (game *Game) Update() error {
+	game.mainMenuUI.Update()
 	game.eventManager.Update()
 	//if time.Since(game.globalTime) < time.Second/time.Duration(60) {
 	//	return nil
@@ -348,7 +332,7 @@ func preparePlayerRatings(records []statisticer.Record, playerName string, playe
 func (game *Game) Draw(screen *ebiten.Image) {
 	switch game.stage {
 	case MainMenuStage:
-		game.mainMenu.Draw(screen)
+		game.mainMenuUI.Draw(screen)
 	case MenuStage:
 		game.menu.Draw(screen)
 	case StatisticsStage:
@@ -357,6 +341,8 @@ func (game *Game) Draw(screen *ebiten.Image) {
 		game.drawSetPlayerRecordStage(screen)
 	case GameStage, GameOverStage:
 		game.drawGameStage(screen)
+	case SettingsStage:
+		// todo
 	default:
 	}
 }
@@ -398,7 +384,7 @@ func (game *Game) addEvents() {
 	game.eventManager.AddPressedEvent(ebiten.KeyUp, func() {
 		switch game.stage {
 		case MainMenuStage:
-			game.mainMenu.BeforeMenuItem()
+			game.mainMenuButtons.Before()
 		case MenuStage:
 			game.menu.BeforeMenuItem()
 		}
@@ -415,7 +401,7 @@ func (game *Game) addEvents() {
 	game.eventManager.AddPressedEvent(ebiten.KeyDown, func() {
 		switch game.stage {
 		case MainMenuStage:
-			game.mainMenu.NextMenuItem()
+			game.mainMenuButtons.Next()
 		case MenuStage:
 			game.menu.NextMenuItem()
 		}
@@ -434,7 +420,7 @@ func (game *Game) addEvents() {
 		case GameOverStage:
 			game.Reset()
 		case MainMenuStage:
-			game.mainMenu.ClickActiveButton()
+			game.mainMenuButtons.Click()
 		case MenuStage:
 			game.menu.ClickActiveButton()
 		case StatisticsStage:
@@ -508,7 +494,7 @@ func ConvertRectangleToObject(rectangle rectangle.Rectangle) raycasting.Object {
 }
 
 func (game *Game) Reset() {
-	sunDirection := shadow.DirectionShadow(rand.IntN(6))
+	sunDirection := shadow.DirectionShadow(1)
 	game.sunDirection = sunDirection
 
 	game.setStage(GameStage)
@@ -521,4 +507,26 @@ func (game *Game) Reset() {
 	game.cars.Reset()
 	game.cars.SetSunDirection(sunDirection)
 	game.explosionAnimation.Reset()
+}
+
+func createUI(title string, res *uiResources, page widget.PreferredSizeLocateableWidget) *ebitenui.UI {
+	rootContainer := widget.NewContainer(
+		widget.ContainerOpts.WidgetOpts(widget.WidgetOpts.TrackHover(false)),
+		widget.ContainerOpts.Layout(widget.NewGridLayout(
+			widget.GridLayoutOpts.Columns(1),
+			widget.GridLayoutOpts.Stretch([]bool{true}, []bool{true, true, false}),
+			widget.GridLayoutOpts.Padding(widget.Insets{
+				Top:    20,
+				Bottom: 20,
+			}),
+			widget.GridLayoutOpts.Spacing(0, 20))),
+		widget.ContainerOpts.BackgroundImage(res.background))
+
+	rootContainer.AddChild(headerContainer(title, res))
+
+	rootContainer.AddChild(page)
+
+	return &ebitenui.UI{
+		Container: rootContainer,
+	}
 }
