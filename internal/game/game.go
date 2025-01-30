@@ -6,7 +6,6 @@ import (
 	"image"
 	"image/color"
 	"log"
-	"os"
 	"sort"
 
 	"github.com/VxVxN/game/internal/cargenerator"
@@ -19,10 +18,8 @@ import (
 	"github.com/VxVxN/game/pkg/statisticer"
 	"github.com/VxVxN/game/pkg/textfield"
 	"github.com/VxVxN/gamedevlib/eventmanager"
-	"github.com/VxVxN/gamedevlib/menu"
 	"github.com/VxVxN/gamedevlib/raycasting"
 	"github.com/ebitenui/ebitenui"
-	//uiimage "github.com/ebitenui/ebitenui/image"
 	"github.com/ebitenui/ebitenui/widget"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/audio"
@@ -33,8 +30,9 @@ import (
 
 type Game struct {
 	mainMenuUI                 *ebitenui.UI
-	menuUI                     *ebitenui.UI
 	mainMenuButtons            *ButtonControl
+	menuUI                     *ebitenui.UI
+	menuButtons                *ButtonControl
 	windowWidth, windowHeight  float64
 	startPlayerX, startPlayerY float64
 	scrollSpeed                float64
@@ -44,7 +42,6 @@ type Game struct {
 	background                 *background.Background
 	cars                       *cargenerator.CarGenerator
 	stage                      Stage
-	menu                       *menu.Menu // todo remove it
 	statisticer                *statisticer.Statisticer
 	textField                  *textfield.TextField
 	audioPlayer                *audioplayer.AudioPlayer
@@ -157,11 +154,6 @@ func NewGame() (*Game, error) {
 		return nil, fmt.Errorf("failed to create new face source: %v", err)
 	}
 
-	menuTextFace := &text.GoTextFace{
-		Source: textFaceSource,
-		Size:   32,
-	}
-
 	inputTextFace := &text.GoTextFace{
 		Source: textFaceSource,
 		Size:   32,
@@ -217,29 +209,7 @@ func NewGame() (*Game, error) {
 	}
 
 	game.mainMenuUI = createUI("Racer", res, mainPage(game, res))
-
-	menu, err := menu.NewMenu(width, height, menuTextFace, []menu.ButtonOptions{
-		{
-			Text: "Continue game",
-			Action: func() {
-				game.setStage(GameStage)
-			},
-		},
-		{
-			Text: "Go back to the main menu",
-			Action: func() {
-				game.setStage(MainMenuStage)
-			},
-		},
-		{
-			Text: "Exit",
-			Action: func() {
-				os.Exit(0)
-			},
-		}}, menu.MenuOptions{
-		ButtonPadding: 20,
-	})
-	game.menu = menu
+	game.menuUI = createUI("Menu", res, menuPage(game, res))
 
 	game.addEvents()
 
@@ -334,7 +304,7 @@ func (game *Game) Draw(screen *ebiten.Image) {
 	case MainMenuStage:
 		game.mainMenuUI.Draw(screen)
 	case MenuStage:
-		game.menu.Draw(screen)
+		game.menuUI.Draw(screen)
 	case StatisticsStage:
 		game.drawStatisticsStage(screen)
 	case SetPlayerRecordStage:
@@ -386,7 +356,7 @@ func (game *Game) addEvents() {
 		case MainMenuStage:
 			game.mainMenuButtons.Before()
 		case MenuStage:
-			game.menu.BeforeMenuItem()
+			game.menuButtons.Before()
 		}
 	})
 	game.eventManager.AddPressEvent(ebiten.KeyDown, func() {
@@ -403,7 +373,7 @@ func (game *Game) addEvents() {
 		case MainMenuStage:
 			game.mainMenuButtons.Next()
 		case MenuStage:
-			game.menu.NextMenuItem()
+			game.menuButtons.Next()
 		}
 	})
 	game.eventManager.AddPressEvent(ebiten.KeyEscape, func() {
@@ -422,7 +392,7 @@ func (game *Game) addEvents() {
 		case MainMenuStage:
 			game.mainMenuButtons.Click()
 		case MenuStage:
-			game.menu.ClickActiveButton()
+			game.menuButtons.Click()
 		case StatisticsStage:
 			game.setStage(MainMenuStage)
 		case SetPlayerRecordStage:

@@ -48,6 +48,48 @@ func mainPage(game *Game, res *uiResources) widget.PreferredSizeLocateableWidget
 	return container
 }
 
+func menuPage(game *Game, res *uiResources) widget.PreferredSizeLocateableWidget {
+	container := newPageContentContainer()
+
+	buttonOpts := widget.ButtonOpts.WidgetOpts(widget.WidgetOpts.LayoutData(widget.RowLayoutData{
+		Position: widget.RowLayoutPositionCenter,
+		MaxWidth: 450,
+		Stretch:  true,
+	}))
+
+	continueGameButton := widget.NewButton(
+		buttonOpts,
+		widget.ButtonOpts.Image(res.button.image),
+		widget.ButtonOpts.Text("Continue game", res.button.face, res.button.text),
+		widget.ButtonOpts.TextPadding(res.button.padding),
+		widget.ButtonOpts.ClickedHandler(func(args *widget.ButtonClickedEventArgs) {
+			game.setStage(GameStage)
+		}))
+	container.AddChild(continueGameButton)
+
+	backToMainMenuButton := widget.NewButton(
+		buttonOpts,
+		widget.ButtonOpts.Image(res.button.image),
+		widget.ButtonOpts.Text("Go back to the main menu", res.button.face, res.button.text),
+		widget.ButtonOpts.ClickedHandler(func(args *widget.ButtonClickedEventArgs) {
+			game.setStage(MainMenuStage)
+		}))
+	container.AddChild(backToMainMenuButton)
+
+	exitButton := widget.NewButton(
+		buttonOpts,
+		widget.ButtonOpts.Image(res.button.image),
+		widget.ButtonOpts.Text("Exit", res.button.face, res.button.text),
+		widget.ButtonOpts.ClickedHandler(func(args *widget.ButtonClickedEventArgs) {
+			os.Exit(0)
+		}))
+	container.AddChild(exitButton)
+
+	game.menuButtons = NewButtonControl([]*widget.Button{continueGameButton, backToMainMenuButton, exitButton})
+
+	return container
+}
+
 func settingsPage(res *uiResources) widget.PreferredSizeLocateableWidget {
 	container := newPageContentContainer()
 
