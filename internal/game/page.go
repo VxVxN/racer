@@ -1,6 +1,7 @@
 package game
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"strconv"
@@ -123,6 +124,51 @@ func playerRatingsPage(game *Game, res *uiResources) widget.PreferredSizeLocatea
 		gridLayoutContainer.AddChild(widget.NewText(
 			widget.TextOpts.Text(strconv.Itoa(record.Points), res.text.face, res.text.idleColor)))
 	}
+
+	return container
+}
+
+func setPlayerRatingPage(game *Game, res *uiResources) widget.PreferredSizeLocateableWidget {
+	container := newPageContentContainer()
+
+	gridLayoutContainer := widget.NewContainer(
+		widget.ContainerOpts.WidgetOpts(widget.WidgetOpts.LayoutData(widget.RowLayoutData{
+			Position: widget.RowLayoutPositionCenter,
+		})),
+		widget.ContainerOpts.Layout(widget.NewGridLayout(
+			widget.GridLayoutOpts.Columns(1),
+			widget.GridLayoutOpts.Stretch([]bool{true, true, true, true}, nil),
+			widget.GridLayoutOpts.Spacing(10, 10))))
+	container.AddChild(gridLayoutContainer)
+
+	gridLayoutContainer.AddChild(widget.NewText(
+		widget.TextOpts.Text(fmt.Sprintf("Your new record: %d", int(game.player.Points())), res.text.titleFace, res.text.idleColor)))
+
+	tOpts := []widget.TextInputOpt{
+		widget.TextInputOpts.WidgetOpts(widget.WidgetOpts.LayoutData(widget.RowLayoutData{
+			Stretch: true,
+		})),
+		widget.TextInputOpts.Image(res.textInput.image),
+		widget.TextInputOpts.Color(res.textInput.color),
+		widget.TextInputOpts.Padding(widget.Insets{
+			Left:   13,
+			Right:  13,
+			Top:    7,
+			Bottom: 7,
+		}),
+		widget.TextInputOpts.Face(res.textInput.face),
+		widget.TextInputOpts.CaretOpts(
+			widget.CaretOpts.Size(res.textInput.face, 2),
+		),
+	}
+
+	textInput := widget.NewTextInput(append(
+		tOpts,
+		widget.TextInputOpts.Placeholder("Enter text here"),
+		widget.TextInputOpts.AllowDuplicateSubmit(true))...,
+	)
+	textInput.Focus(true)
+	gridLayoutContainer.AddChild(textInput)
 
 	return container
 }

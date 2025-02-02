@@ -30,11 +30,13 @@ import (
 
 type Game struct {
 	// UI
-	mainMenuUI      *ebitenui.UI
-	mainMenuButtons *ButtonControl
-	menuUI          *ebitenui.UI
-	menuButtons     *ButtonControl
-	playerRatingsUI *ebitenui.UI
+	resourcesUI       *uiResources
+	mainMenuUI        *ebitenui.UI
+	mainMenuButtons   *ButtonControl
+	menuUI            *ebitenui.UI
+	menuButtons       *ButtonControl
+	playerRatingsUI   *ebitenui.UI
+	setPlayerRatingUI *ebitenui.UI
 
 	windowWidth, windowHeight  float64
 	startPlayerX, startPlayerY float64
@@ -211,6 +213,7 @@ func NewGame() (*Game, error) {
 		return nil, err
 	}
 
+	game.resourcesUI = res
 	game.mainMenuUI = createUI("Racer", res, mainPage(game, res), true)
 	game.menuUI = createUI("Menu", res, menuPage(game, res), true)
 	game.playerRatingsUI = createUI("Player ratings", res, playerRatingsPage(game, res), false)
@@ -255,6 +258,7 @@ func (game *Game) Update() error {
 		game.explosionAnimation.SetCallback(func() {
 			defer game.audioPlayer.Play()
 			game.setStage(GameOverStage)
+			game.setPlayerRatingUI = createUI("New record!", game.resourcesUI, setPlayerRatingPage(game, game.resourcesUI), true)
 			records, err := game.statisticer.Load()
 			if err != nil {
 				log.Fatalf("Failed to load statistics: %v", err)
@@ -312,7 +316,7 @@ func (game *Game) Draw(screen *ebiten.Image) {
 	case StatisticsStage:
 		game.playerRatingsUI.Draw(screen)
 	case SetPlayerRecordStage:
-		game.drawSetPlayerRecordStage(screen)
+		game.setPlayerRatingUI.Draw(screen)
 	case GameStage, GameOverStage:
 		game.drawGameStage(screen)
 	case SettingsStage:
@@ -400,6 +404,9 @@ func (game *Game) addEvents() {
 		case StatisticsStage:
 			game.setStage(MainMenuStage)
 		case SetPlayerRecordStage:
+			if game.textField.Text() == "" {
+				break
+			}
 			game.player.SetName(game.textField.Text())
 			records, err := game.statisticer.Load()
 			if err != nil {
@@ -409,6 +416,7 @@ func (game *Game) addEvents() {
 			if err := game.statisticer.Save(resultRecords); err != nil {
 				log.Fatalf("Failed to save results: %v", err)
 			}
+			game.playerRatingsUI = createUI("Player ratings", game.resourcesUI, playerRatingsPage(game, game.resourcesUI), false)
 			game.setStage(StatisticsStage)
 		}
 	})
