@@ -29,10 +29,13 @@ import (
 )
 
 type Game struct {
-	mainMenuUI                 *ebitenui.UI
-	mainMenuButtons            *ButtonControl
-	menuUI                     *ebitenui.UI
-	menuButtons                *ButtonControl
+	// UI
+	mainMenuUI      *ebitenui.UI
+	mainMenuButtons *ButtonControl
+	menuUI          *ebitenui.UI
+	menuButtons     *ButtonControl
+	playerRatingsUI *ebitenui.UI
+
 	windowWidth, windowHeight  float64
 	startPlayerX, startPlayerY float64
 	scrollSpeed                float64
@@ -208,8 +211,9 @@ func NewGame() (*Game, error) {
 		return nil, err
 	}
 
-	game.mainMenuUI = createUI("Racer", res, mainPage(game, res))
-	game.menuUI = createUI("Menu", res, menuPage(game, res))
+	game.mainMenuUI = createUI("Racer", res, mainPage(game, res), true)
+	game.menuUI = createUI("Menu", res, menuPage(game, res), true)
+	game.playerRatingsUI = createUI("Player ratings", res, playerRatingsPage(game, res), false)
 
 	game.addEvents()
 
@@ -306,7 +310,7 @@ func (game *Game) Draw(screen *ebiten.Image) {
 	case MenuStage:
 		game.menuUI.Draw(screen)
 	case StatisticsStage:
-		game.drawStatisticsStage(screen)
+		game.playerRatingsUI.Draw(screen)
 	case SetPlayerRecordStage:
 		game.drawSetPlayerRecordStage(screen)
 	case GameStage, GameOverStage:
@@ -479,12 +483,12 @@ func (game *Game) Reset() {
 	game.explosionAnimation.Reset()
 }
 
-func createUI(title string, res *uiResources, page widget.PreferredSizeLocateableWidget) *ebitenui.UI {
+func createUI(title string, res *uiResources, page widget.PreferredSizeLocateableWidget, center bool) *ebitenui.UI {
 	rootContainer := widget.NewContainer(
 		widget.ContainerOpts.WidgetOpts(widget.WidgetOpts.TrackHover(false)),
 		widget.ContainerOpts.Layout(widget.NewGridLayout(
 			widget.GridLayoutOpts.Columns(1),
-			widget.GridLayoutOpts.Stretch([]bool{true}, []bool{true, true, false}),
+			widget.GridLayoutOpts.Stretch([]bool{true}, []bool{center, true, false}),
 			widget.GridLayoutOpts.Padding(widget.Insets{
 				Top:    20,
 				Bottom: 20,

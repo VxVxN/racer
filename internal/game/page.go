@@ -1,7 +1,9 @@
 package game
 
 import (
+	"log"
 	"os"
+	"strconv"
 
 	"github.com/ebitenui/ebitenui/widget"
 )
@@ -86,6 +88,41 @@ func menuPage(game *Game, res *uiResources) widget.PreferredSizeLocateableWidget
 	container.AddChild(exitButton)
 
 	game.menuButtons = NewButtonControl([]*widget.Button{continueGameButton, backToMainMenuButton, exitButton})
+
+	return container
+}
+
+func playerRatingsPage(game *Game, res *uiResources) widget.PreferredSizeLocateableWidget {
+	container := newPageContentContainer()
+
+	records, err := game.statisticer.Load()
+	if err != nil {
+		log.Fatalf("Failed to load statistics: %v", err)
+	}
+
+	gridLayoutContainer := widget.NewContainer(
+		widget.ContainerOpts.WidgetOpts(widget.WidgetOpts.LayoutData(widget.RowLayoutData{
+			Position: widget.RowLayoutPositionCenter,
+		})),
+		widget.ContainerOpts.Layout(widget.NewGridLayout(
+			widget.GridLayoutOpts.Columns(2),
+			widget.GridLayoutOpts.Stretch([]bool{true, true, true, true}, nil),
+			widget.GridLayoutOpts.Spacing(10, 10))))
+	container.AddChild(gridLayoutContainer)
+
+	gridLayoutContainer.AddChild(widget.NewText(
+		widget.TextOpts.Text("Name", res.text.titleFace, res.text.idleColor)))
+
+	gridLayoutContainer.AddChild(widget.NewText(
+		widget.TextOpts.Text("Points", res.text.titleFace, res.text.idleColor)))
+
+	for _, record := range records {
+		gridLayoutContainer.AddChild(widget.NewText(
+			widget.TextOpts.Text(record.Name, res.text.face, res.text.idleColor)))
+
+		gridLayoutContainer.AddChild(widget.NewText(
+			widget.TextOpts.Text(strconv.Itoa(record.Points), res.text.face, res.text.idleColor)))
+	}
 
 	return container
 }

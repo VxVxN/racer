@@ -3,7 +3,6 @@ package game
 import (
 	"fmt"
 	"image/color"
-	"log"
 
 	"github.com/VxVxN/game/internal/shadow"
 	"github.com/VxVxN/gamedevlib/raycasting"
@@ -87,45 +86,4 @@ func (game *Game) drawSetPlayerRecordStage(screen *ebiten.Image) {
 	op.LayoutOptions.PrimaryAlign = text.AlignCenter
 	text.Draw(screen, "Enter your name:", textFace, op)
 	game.textField.Draw(screen)
-}
-
-func (game *Game) drawStatisticsStage(screen *ebiten.Image) {
-	records, err := game.statisticer.Load()
-	if err != nil {
-		log.Fatalf("Failed to load statistics: %v", err)
-	}
-	textFace := &text.GoTextFace{
-		Source: game.textFaceSource,
-		Size:   48,
-	}
-
-	op := &text.DrawOptions{}
-	op.GeoM.Translate(game.windowWidth/2, 100)
-	op.ColorScale.Scale(255, 255, 255, 1)
-	op.LayoutOptions.PrimaryAlign = text.AlignCenter
-	text.Draw(screen, "Player ratings:", textFace, op)
-
-	textFace = &text.GoTextFace{
-		Source: game.textFaceSource,
-		Size:   24,
-	}
-
-	op = &text.DrawOptions{}
-	op.GeoM.Translate(game.windowWidth/2, 200)
-	op.ColorScale.Scale(255, 255, 255, 1)
-	op.LayoutOptions.PrimaryAlign = text.AlignCenter
-	text.Draw(screen, "Name: Points", textFace, op)
-
-	for i, record := range records {
-		textFace = &text.GoTextFace{
-			Source: game.textFaceSource,
-			Size:   24,
-		}
-
-		op = &text.DrawOptions{}
-		op.GeoM.Translate(game.windowWidth/2, 250+float64(i*48))
-		op.ColorScale.Scale(255, 255, 255, 1)
-		op.LayoutOptions.PrimaryAlign = text.AlignCenter
-		text.Draw(screen, fmt.Sprintf("%d) %s: %d", i+1, record.Name, record.Points), textFace, op)
-	}
 }
