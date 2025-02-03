@@ -1,11 +1,11 @@
-package game
+package ui
 
 import (
 	"github.com/ebitenui/ebitenui/widget"
 )
 
 type dragContents struct {
-	res *uiResources
+	res *UiResources
 
 	text *widget.Text
 }

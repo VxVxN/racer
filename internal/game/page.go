@@ -6,11 +6,12 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/VxVxN/game/internal/ui"
 	"github.com/ebitenui/ebitenui/widget"
 )
 
-func mainPage(game *Game, res *uiResources) widget.PreferredSizeLocateableWidget {
-	container := newPageContentContainer()
+func mainPage(game *Game, res *ui.UiResources) widget.PreferredSizeLocateableWidget {
+	container := ui.NewPageContentContainer()
 
 	buttonOpts := widget.ButtonOpts.WidgetOpts(widget.WidgetOpts.LayoutData(widget.RowLayoutData{
 		Position: widget.RowLayoutPositionCenter,
@@ -20,9 +21,9 @@ func mainPage(game *Game, res *uiResources) widget.PreferredSizeLocateableWidget
 
 	newGameButton := widget.NewButton(
 		buttonOpts,
-		widget.ButtonOpts.Image(res.button.image),
-		widget.ButtonOpts.Text("New game", res.button.face, res.button.text),
-		widget.ButtonOpts.TextPadding(res.button.padding),
+		widget.ButtonOpts.Image(res.Button.Image),
+		widget.ButtonOpts.Text("New game", res.Button.Face, res.Button.Text),
+		widget.ButtonOpts.TextPadding(res.Button.Padding),
 		widget.ButtonOpts.ClickedHandler(func(args *widget.ButtonClickedEventArgs) {
 			game.Reset()
 		}))
@@ -30,8 +31,8 @@ func mainPage(game *Game, res *uiResources) widget.PreferredSizeLocateableWidget
 
 	playerRatingsButton := widget.NewButton(
 		buttonOpts,
-		widget.ButtonOpts.Image(res.button.image),
-		widget.ButtonOpts.Text("Player ratings", res.button.face, res.button.text),
+		widget.ButtonOpts.Image(res.Button.Image),
+		widget.ButtonOpts.Text("Player ratings", res.Button.Face, res.Button.Text),
 		widget.ButtonOpts.ClickedHandler(func(args *widget.ButtonClickedEventArgs) {
 			game.setStage(StatisticsStage)
 		}))
@@ -39,20 +40,20 @@ func mainPage(game *Game, res *uiResources) widget.PreferredSizeLocateableWidget
 
 	exitButton := widget.NewButton(
 		buttonOpts,
-		widget.ButtonOpts.Image(res.button.image),
-		widget.ButtonOpts.Text("Exit", res.button.face, res.button.text),
+		widget.ButtonOpts.Image(res.Button.Image),
+		widget.ButtonOpts.Text("Exit", res.Button.Face, res.Button.Text),
 		widget.ButtonOpts.ClickedHandler(func(args *widget.ButtonClickedEventArgs) {
 			os.Exit(0)
 		}))
 	container.AddChild(exitButton)
 
-	game.mainMenuButtons = NewButtonControl([]*widget.Button{newGameButton, playerRatingsButton, exitButton})
+	game.mainMenuButtons = ui.NewButtonControl([]*widget.Button{newGameButton, playerRatingsButton, exitButton})
 
 	return container
 }
 
-func menuPage(game *Game, res *uiResources) widget.PreferredSizeLocateableWidget {
-	container := newPageContentContainer()
+func menuPage(game *Game, res *ui.UiResources) widget.PreferredSizeLocateableWidget {
+	container := ui.NewPageContentContainer()
 
 	buttonOpts := widget.ButtonOpts.WidgetOpts(widget.WidgetOpts.LayoutData(widget.RowLayoutData{
 		Position: widget.RowLayoutPositionCenter,
@@ -62,9 +63,9 @@ func menuPage(game *Game, res *uiResources) widget.PreferredSizeLocateableWidget
 
 	continueGameButton := widget.NewButton(
 		buttonOpts,
-		widget.ButtonOpts.Image(res.button.image),
-		widget.ButtonOpts.Text("Continue game", res.button.face, res.button.text),
-		widget.ButtonOpts.TextPadding(res.button.padding),
+		widget.ButtonOpts.Image(res.Button.Image),
+		widget.ButtonOpts.Text("Continue game", res.Button.Face, res.Button.Text),
+		widget.ButtonOpts.TextPadding(res.Button.Padding),
 		widget.ButtonOpts.ClickedHandler(func(args *widget.ButtonClickedEventArgs) {
 			game.setStage(GameStage)
 		}))
@@ -72,8 +73,8 @@ func menuPage(game *Game, res *uiResources) widget.PreferredSizeLocateableWidget
 
 	backToMainMenuButton := widget.NewButton(
 		buttonOpts,
-		widget.ButtonOpts.Image(res.button.image),
-		widget.ButtonOpts.Text("Go back to the main menu", res.button.face, res.button.text),
+		widget.ButtonOpts.Image(res.Button.Image),
+		widget.ButtonOpts.Text("Go back to the main menu", res.Button.Face, res.Button.Text),
 		widget.ButtonOpts.ClickedHandler(func(args *widget.ButtonClickedEventArgs) {
 			game.setStage(MainMenuStage)
 		}))
@@ -81,20 +82,20 @@ func menuPage(game *Game, res *uiResources) widget.PreferredSizeLocateableWidget
 
 	exitButton := widget.NewButton(
 		buttonOpts,
-		widget.ButtonOpts.Image(res.button.image),
-		widget.ButtonOpts.Text("Exit", res.button.face, res.button.text),
+		widget.ButtonOpts.Image(res.Button.Image),
+		widget.ButtonOpts.Text("Exit", res.Button.Face, res.Button.Text),
 		widget.ButtonOpts.ClickedHandler(func(args *widget.ButtonClickedEventArgs) {
 			os.Exit(0)
 		}))
 	container.AddChild(exitButton)
 
-	game.menuButtons = NewButtonControl([]*widget.Button{continueGameButton, backToMainMenuButton, exitButton})
+	game.menuButtons = ui.NewButtonControl([]*widget.Button{continueGameButton, backToMainMenuButton, exitButton})
 
 	return container
 }
 
-func playerRatingsPage(game *Game, res *uiResources) widget.PreferredSizeLocateableWidget {
-	container := newPageContentContainer()
+func playerRatingsPage(game *Game, res *ui.UiResources) widget.PreferredSizeLocateableWidget {
+	container := ui.NewPageContentContainer()
 
 	records, err := game.statisticer.Load()
 	if err != nil {
@@ -112,24 +113,24 @@ func playerRatingsPage(game *Game, res *uiResources) widget.PreferredSizeLocatea
 	container.AddChild(gridLayoutContainer)
 
 	gridLayoutContainer.AddChild(widget.NewText(
-		widget.TextOpts.Text("Name", res.text.titleFace, res.text.idleColor)))
+		widget.TextOpts.Text("Name", res.Text.TitleFace, res.Text.IdleColor)))
 
 	gridLayoutContainer.AddChild(widget.NewText(
-		widget.TextOpts.Text("Points", res.text.titleFace, res.text.idleColor)))
+		widget.TextOpts.Text("Points", res.Text.TitleFace, res.Text.IdleColor)))
 
 	for _, record := range records {
 		gridLayoutContainer.AddChild(widget.NewText(
-			widget.TextOpts.Text(record.Name, res.text.face, res.text.idleColor)))
+			widget.TextOpts.Text(record.Name, res.Text.Face, res.Text.IdleColor)))
 
 		gridLayoutContainer.AddChild(widget.NewText(
-			widget.TextOpts.Text(strconv.Itoa(record.Points), res.text.face, res.text.idleColor)))
+			widget.TextOpts.Text(strconv.Itoa(record.Points), res.Text.Face, res.Text.IdleColor)))
 	}
 
 	return container
 }
 
-func setPlayerRatingPage(game *Game, res *uiResources) widget.PreferredSizeLocateableWidget {
-	container := newPageContentContainer()
+func setPlayerRatingPage(game *Game, res *ui.UiResources) widget.PreferredSizeLocateableWidget {
+	container := ui.NewPageContentContainer()
 
 	gridLayoutContainer := widget.NewContainer(
 		widget.ContainerOpts.WidgetOpts(widget.WidgetOpts.LayoutData(widget.RowLayoutData{
@@ -142,23 +143,23 @@ func setPlayerRatingPage(game *Game, res *uiResources) widget.PreferredSizeLocat
 	container.AddChild(gridLayoutContainer)
 
 	gridLayoutContainer.AddChild(widget.NewText(
-		widget.TextOpts.Text(fmt.Sprintf("Your new record: %d", int(game.player.Points())), res.text.titleFace, res.text.idleColor)))
+		widget.TextOpts.Text(fmt.Sprintf("Your new record: %d", int(game.player.Points())), res.Text.TitleFace, res.Text.IdleColor)))
 
 	tOpts := []widget.TextInputOpt{
 		widget.TextInputOpts.WidgetOpts(widget.WidgetOpts.LayoutData(widget.RowLayoutData{
 			Stretch: true,
 		})),
-		widget.TextInputOpts.Image(res.textInput.image),
-		widget.TextInputOpts.Color(res.textInput.color),
+		widget.TextInputOpts.Image(res.TextInput.Image),
+		widget.TextInputOpts.Color(res.TextInput.Color),
 		widget.TextInputOpts.Padding(widget.Insets{
 			Left:   13,
 			Right:  13,
 			Top:    7,
 			Bottom: 7,
 		}),
-		widget.TextInputOpts.Face(res.textInput.face),
+		widget.TextInputOpts.Face(res.TextInput.Face),
 		widget.TextInputOpts.CaretOpts(
-			widget.CaretOpts.Size(res.textInput.face, 2),
+			widget.CaretOpts.Size(res.TextInput.Face, 2),
 		),
 	}
 
@@ -173,8 +174,8 @@ func setPlayerRatingPage(game *Game, res *uiResources) widget.PreferredSizeLocat
 	return container
 }
 
-func settingsPage(res *uiResources) widget.PreferredSizeLocateableWidget {
-	container := newPageContentContainer()
+func settingsPage(res *ui.UiResources) widget.PreferredSizeLocateableWidget {
+	container := ui.NewPageContentContainer()
 
 	rayLayoutContainer := widget.NewContainer(
 		widget.ContainerOpts.Layout(widget.NewRowLayout(
@@ -186,8 +187,8 @@ func settingsPage(res *uiResources) widget.PreferredSizeLocateableWidget {
 			Left:  30,
 			Right: 30,
 		}),
-		widget.ButtonOpts.Image(res.button.image),
-		widget.ButtonOpts.Text("Save", res.button.face, res.button.text),
+		widget.ButtonOpts.Image(res.Button.Image),
+		widget.ButtonOpts.Text("Save", res.Button.Face, res.Button.Text),
 		widget.ButtonOpts.ClickedHandler(func(args *widget.ButtonClickedEventArgs) {
 			// todo save
 		}))
@@ -198,15 +199,15 @@ func settingsPage(res *uiResources) widget.PreferredSizeLocateableWidget {
 			Left:  30,
 			Right: 30,
 		}),
-		widget.ButtonOpts.Image(res.button.image),
-		widget.ButtonOpts.Text("Back", res.button.face, res.button.text),
+		widget.ButtonOpts.Image(res.Button.Image),
+		widget.ButtonOpts.Text("Back", res.Button.Face, res.Button.Text),
 		widget.ButtonOpts.ClickedHandler(func(args *widget.ButtonClickedEventArgs) {
 			// todo back
 			os.Exit(0)
 		}))
 	rayLayoutContainer.AddChild(backButton)
 
-	container.AddChild(newSeparator(res, widget.RowLayoutData{
+	container.AddChild(ui.NewSeparator(res, widget.RowLayoutData{
 		Stretch: true,
 	}))
 
@@ -221,7 +222,7 @@ func settingsPage(res *uiResources) widget.PreferredSizeLocateableWidget {
 	container.AddChild(gridLayoutContainer)
 
 	gridLayoutContainer.AddChild(widget.NewText(
-		widget.TextOpts.Text("Resolution", res.text.face, res.text.idleColor)))
+		widget.TextOpts.Text("Resolution", res.Text.Face, res.Text.IdleColor)))
 
 	entries := []interface{}{
 		"Full screen",
@@ -231,7 +232,7 @@ func settingsPage(res *uiResources) widget.PreferredSizeLocateableWidget {
 		"1280x720",
 	}
 
-	cb := newListComboButton(
+	cb := ui.NewListComboButton(
 		entries,
 		func(e interface{}) string {
 			return e.(string)

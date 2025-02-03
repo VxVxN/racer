@@ -1,4 +1,4 @@
-package game
+package ui
 
 import (
 	"image/color"
@@ -7,11 +7,11 @@ import (
 	"github.com/ebitenui/ebitenui/widget"
 )
 
-func header(label string, res *uiResources, opts ...widget.ContainerOpt) widget.PreferredSizeLocateableWidget {
+func header(label string, res *UiResources, opts ...widget.ContainerOpt) widget.PreferredSizeLocateableWidget {
 	c := widget.NewContainer(append(opts, []widget.ContainerOpt{
 		widget.ContainerOpts.WidgetOpts(widget.WidgetOpts.TrackHover(false)),
-		widget.ContainerOpts.BackgroundImage(res.header.background),
-		widget.ContainerOpts.Layout(widget.NewAnchorLayout(widget.AnchorLayoutOpts.Padding(res.header.padding))),
+		widget.ContainerOpts.BackgroundImage(res.Header.background),
+		widget.ContainerOpts.Layout(widget.NewAnchorLayout(widget.AnchorLayoutOpts.Padding(res.Header.padding))),
 	}...)...)
 
 	c.AddChild(widget.NewText(
@@ -19,14 +19,14 @@ func header(label string, res *uiResources, opts ...widget.ContainerOpt) widget.
 			HorizontalPosition: widget.AnchorLayoutPositionStart,
 			VerticalPosition:   widget.AnchorLayoutPositionCenter,
 		})),
-		widget.TextOpts.Text(label, res.header.face, res.header.color),
+		widget.TextOpts.Text(label, res.Header.face, res.Header.color),
 		widget.TextOpts.Position(widget.TextPositionStart, widget.TextPositionCenter),
 	))
 
 	return c
 }
 
-func headerContainer(title string, res *uiResources) widget.PreferredSizeLocateableWidget {
+func HeaderContainer(title string, res *UiResources) widget.PreferredSizeLocateableWidget {
 	c := widget.NewContainer(
 		widget.ContainerOpts.Layout(widget.NewRowLayout(
 			widget.RowLayoutOpts.Direction(widget.DirectionVertical),
@@ -59,7 +59,7 @@ type pageContainer struct {
 	flipBook  *widget.FlipBook
 }
 
-func newPageContainer(res *uiResources) *pageContainer {
+func newPageContainer(res *UiResources) *pageContainer {
 	c := widget.NewContainer(
 		widget.ContainerOpts.WidgetOpts(widget.WidgetOpts.TrackHover(false)),
 		widget.ContainerOpts.BackgroundImage(res.panel.image),
@@ -73,7 +73,7 @@ func newPageContainer(res *uiResources) *pageContainer {
 		widget.TextOpts.WidgetOpts(widget.WidgetOpts.LayoutData(widget.RowLayoutData{
 			Stretch: true,
 		})),
-		widget.TextOpts.Text("", res.text.titleFace, res.text.idleColor))
+		widget.TextOpts.Text("", res.Text.TitleFace, res.Text.IdleColor))
 	c.AddChild(titleText)
 
 	flipBook := widget.NewFlipBook(
@@ -90,21 +90,21 @@ func newPageContainer(res *uiResources) *pageContainer {
 	}
 }
 
-func newCheckbox(label string, changedHandler widget.CheckboxChangedHandlerFunc, res *uiResources) *widget.LabeledCheckbox {
+func newCheckbox(label string, changedHandler widget.CheckboxChangedHandlerFunc, res *UiResources) *widget.LabeledCheckbox {
 	return widget.NewLabeledCheckbox(
-		widget.LabeledCheckboxOpts.Spacing(res.checkbox.spacing),
+		widget.LabeledCheckboxOpts.Spacing(res.Checkbox.spacing),
 		widget.LabeledCheckboxOpts.CheckboxOpts(
-			widget.CheckboxOpts.ButtonOpts(widget.ButtonOpts.Image(res.checkbox.image)),
-			widget.CheckboxOpts.Image(res.checkbox.graphic),
+			widget.CheckboxOpts.ButtonOpts(widget.ButtonOpts.Image(res.Checkbox.image)),
+			widget.CheckboxOpts.Image(res.Checkbox.graphic),
 			widget.CheckboxOpts.StateChangedHandler(func(args *widget.CheckboxChangedEventArgs) {
 				if changedHandler != nil {
 					changedHandler(args)
 				}
 			})),
-		widget.LabeledCheckboxOpts.LabelOpts(widget.LabelOpts.Text(label, res.label.face, res.label.text)))
+		widget.LabeledCheckboxOpts.LabelOpts(widget.LabelOpts.Text(label, res.Label.face, res.Label.text)))
 }
 
-func newPageContentContainer() *widget.Container {
+func NewPageContentContainer() *widget.Container {
 	return widget.NewContainer(
 		widget.ContainerOpts.WidgetOpts(widget.WidgetOpts.LayoutData(widget.AnchorLayoutData{
 			StretchHorizontal: true,
@@ -115,8 +115,8 @@ func newPageContentContainer() *widget.Container {
 		)))
 }
 
-func newListComboButton(entries []interface{}, buttonLabel widget.SelectComboButtonEntryLabelFunc, entryLabel widget.ListEntryLabelFunc,
-	entrySelectedHandler widget.ListComboButtonEntrySelectedHandlerFunc, res *uiResources) *widget.ListComboButton {
+func NewListComboButton(entries []interface{}, buttonLabel widget.SelectComboButtonEntryLabelFunc, entryLabel widget.ListEntryLabelFunc,
+	entrySelectedHandler widget.ListComboButtonEntrySelectedHandlerFunc, res *UiResources) *widget.ListComboButton {
 
 	return widget.NewListComboButton(
 		widget.ListComboButtonOpts.SelectComboButtonOpts(
@@ -145,7 +145,7 @@ func newListComboButton(entries []interface{}, buttonLabel widget.SelectComboBut
 		widget.ListComboButtonOpts.EntrySelectedHandler(entrySelectedHandler))
 }
 
-func newList(entries []interface{}, res *uiResources, widgetOpts ...widget.WidgetOpt) *widget.List {
+func newList(entries []interface{}, res *UiResources, widgetOpts ...widget.WidgetOpt) *widget.List {
 	return widget.NewList(
 		widget.ListOpts.ContainerOpts(widget.ContainerOpts.WidgetOpts(widgetOpts...)),
 		widget.ListOpts.ScrollContainerOpts(widget.ScrollContainerOpts.Image(res.list.image)),
@@ -164,7 +164,7 @@ func newList(entries []interface{}, res *uiResources, widgetOpts ...widget.Widge
 		widget.ListOpts.EntryTextPadding(res.list.entryPadding),
 	)
 }
-func newTextArea(text string, res *uiResources, widgetOpts ...widget.WidgetOpt) *widget.TextArea {
+func newTextArea(text string, res *UiResources, widgetOpts ...widget.WidgetOpt) *widget.TextArea {
 	return widget.NewTextArea(
 		widget.TextAreaOpts.ContainerOpts(widget.ContainerOpts.WidgetOpts(widgetOpts...)),
 		widget.TextAreaOpts.ScrollContainerOpts(widget.ScrollContainerOpts.Image(res.list.image)),
@@ -183,7 +183,7 @@ func newTextArea(text string, res *uiResources, widgetOpts ...widget.WidgetOpt) 
 	)
 }
 
-func newSeparator(res *uiResources, ld interface{}) widget.PreferredSizeLocateableWidget {
+func NewSeparator(res *UiResources, ld interface{}) widget.PreferredSizeLocateableWidget {
 	c := widget.NewContainer(
 		widget.ContainerOpts.Layout(widget.NewRowLayout(
 			widget.RowLayoutOpts.Direction(widget.DirectionVertical),
@@ -198,7 +198,7 @@ func newSeparator(res *uiResources, ld interface{}) widget.PreferredSizeLocateab
 			Stretch:   true,
 			MaxHeight: 2,
 		})),
-		widget.GraphicOpts.ImageNineSlice(image.NewNineSliceColor(res.separatorColor)),
+		widget.GraphicOpts.ImageNineSlice(image.NewNineSliceColor(res.SeparatorColor)),
 	))
 
 	return c

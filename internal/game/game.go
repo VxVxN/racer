@@ -10,6 +10,8 @@ import (
 
 	"github.com/VxVxN/game/internal/cargenerator"
 	"github.com/VxVxN/game/internal/shadow"
+	"github.com/VxVxN/game/internal/ui"
+	ui2 "github.com/VxVxN/game/internal/ui"
 	"github.com/VxVxN/game/pkg/animation"
 	"github.com/VxVxN/game/pkg/audioplayer"
 	"github.com/VxVxN/game/pkg/background"
@@ -30,11 +32,11 @@ import (
 
 type Game struct {
 	// UI
-	resourcesUI       *uiResources
+	resourcesUI       *ui.UiResources
 	mainMenuUI        *ebitenui.UI
-	mainMenuButtons   *ButtonControl
+	mainMenuButtons   *ui2.ButtonControl
 	menuUI            *ebitenui.UI
-	menuButtons       *ButtonControl
+	menuButtons       *ui2.ButtonControl
 	playerRatingsUI   *ebitenui.UI
 	setPlayerRatingUI *ebitenui.UI
 
@@ -208,7 +210,7 @@ func NewGame() (*Game, error) {
 	}
 	game.triangleImage.Fill(m)
 
-	res, err := newUIResources()
+	res, err := ui.NewUIResources()
 	if err != nil {
 		return nil, err
 	}
@@ -491,7 +493,7 @@ func (game *Game) Reset() {
 	game.explosionAnimation.Reset()
 }
 
-func createUI(title string, res *uiResources, page widget.PreferredSizeLocateableWidget, center bool) *ebitenui.UI {
+func createUI(title string, res *ui.UiResources, page widget.PreferredSizeLocateableWidget, center bool) *ebitenui.UI {
 	rootContainer := widget.NewContainer(
 		widget.ContainerOpts.WidgetOpts(widget.WidgetOpts.TrackHover(false)),
 		widget.ContainerOpts.Layout(widget.NewGridLayout(
@@ -502,9 +504,9 @@ func createUI(title string, res *uiResources, page widget.PreferredSizeLocateabl
 				Bottom: 20,
 			}),
 			widget.GridLayoutOpts.Spacing(0, 20))),
-		widget.ContainerOpts.BackgroundImage(res.background))
+		widget.ContainerOpts.BackgroundImage(res.Background))
 
-	rootContainer.AddChild(headerContainer(title, res))
+	rootContainer.AddChild(ui.HeaderContainer(title, res))
 
 	rootContainer.AddChild(page)
 

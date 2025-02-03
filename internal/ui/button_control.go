@@ -1,4 +1,4 @@
-package game
+package ui
 
 import (
 	"github.com/ebitenui/ebitenui/widget"

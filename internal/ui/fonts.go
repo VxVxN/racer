@@ -1,4 +1,4 @@
-package game
+package ui
 
 import (
 	"log"
@@ -11,14 +11,14 @@ const (
 	fontFaceBold    = "assets/fonts/notosans-bold.ttf"
 )
 
-type fonts struct {
+type Fonts struct {
 	face         text.Face
 	titleFace    text.Face
 	bigTitleFace text.Face
 	toolTipFace  text.Face
 }
 
-func loadFonts() (*fonts, error) {
+func loadFonts() (*Fonts, error) {
 	fontFace, err := loadFont(fontFaceRegular, 30)
 	if err != nil {
 		return nil, err
@@ -39,7 +39,7 @@ func loadFonts() (*fonts, error) {
 		return nil, err
 	}
 
-	return &fonts{
+	return &Fonts{
 		face:         fontFace,
 		titleFace:    titleFontFace,
 		bigTitleFace: bigTitleFontFace,

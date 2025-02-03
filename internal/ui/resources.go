@@ -1,4 +1,4 @@
-package game
+package ui
 
 import (
 	"image/color"
@@ -36,43 +36,43 @@ const (
 	separatorColor = listDisabledSelectedBackground
 )
 
-type uiResources struct {
-	fonts *fonts
+type UiResources struct {
+	Fonts *Fonts
 
-	background *image.NineSlice
+	Background *image.NineSlice
 
-	separatorColor color.Color
+	SeparatorColor color.Color
 
-	text        *textResources
-	button      *buttonResources
-	label       *labelResources
-	checkbox    *checkboxResources
+	Text        *textResources
+	Button      *buttonResources
+	Label       *labelResources
+	Checkbox    *checkboxResources
 	comboButton *comboButtonResources
 	list        *listResources
 	slider      *sliderResources
 	progressBar *progressBarResources
 	panel       *panelResources
 	tabBook     *tabBookResources
-	header      *headerResources
-	textInput   *textInputResources
+	Header      *headerResources
+	TextInput   *textInputResources
 	textArea    *textAreaResources
 	toolTip     *toolTipResources
 }
 
 type textResources struct {
-	idleColor     color.Color
+	IdleColor     color.Color
 	disabledColor color.Color
-	face          text.Face
-	titleFace     text.Face
-	bigTitleFace  text.Face
-	smallFace     text.Face
+	Face          text.Face
+	TitleFace     text.Face
+	BigTitleFace  text.Face
+	SmallFace     text.Face
 }
 
 type buttonResources struct {
-	image   *widget.ButtonImage
-	text    *widget.ButtonTextColor
-	face    text.Face
-	padding widget.Insets
+	Image   *widget.ButtonImage
+	Text    *widget.ButtonTextColor
+	Face    text.Face
+	Padding widget.Insets
 }
 
 type checkboxResources struct {
@@ -136,10 +136,10 @@ type headerResources struct {
 }
 
 type textInputResources struct {
-	image   *widget.TextInputImage
-	padding widget.Insets
-	face    text.Face
-	color   *widget.TextInputColor
+	Image   *widget.TextInputImage
+	Padding widget.Insets
+	Face    text.Face
+	Color   *widget.TextInputColor
 }
 
 type textAreaResources struct {
@@ -159,7 +159,7 @@ type toolTipResources struct {
 	color      color.Color
 }
 
-func newUIResources() (*uiResources, error) {
+func NewUIResources() (*UiResources, error) {
 	background := image.NewNineSliceColor(hexToColor(backgroundColor))
 
 	fonts, err := loadFonts()
@@ -225,39 +225,39 @@ func newUIResources() (*uiResources, error) {
 		return nil, err
 	}
 
-	return &uiResources{
-		fonts: fonts,
+	return &UiResources{
+		Fonts: fonts,
 
-		background: background,
+		Background: background,
 
-		separatorColor: hexToColor(separatorColor),
+		SeparatorColor: hexToColor(separatorColor),
 
-		text: &textResources{
-			idleColor:     hexToColor(textIdleColor),
+		Text: &textResources{
+			IdleColor:     hexToColor(textIdleColor),
 			disabledColor: hexToColor(textDisabledColor),
-			face:          fonts.face,
-			titleFace:     fonts.titleFace,
-			bigTitleFace:  fonts.bigTitleFace,
-			smallFace:     fonts.toolTipFace,
+			Face:          fonts.face,
+			TitleFace:     fonts.titleFace,
+			BigTitleFace:  fonts.bigTitleFace,
+			SmallFace:     fonts.toolTipFace,
 		},
 
-		button:      button,
-		label:       newLabelResources(fonts),
-		checkbox:    checkbox,
+		Button:      button,
+		Label:       newLabelResources(fonts),
+		Checkbox:    checkbox,
 		comboButton: comboButton,
 		list:        list,
 		slider:      slider,
 		panel:       panel,
 		tabBook:     tabBook,
-		header:      header,
-		textInput:   textInput,
+		Header:      header,
+		TextInput:   textInput,
 		toolTip:     toolTip,
 		textArea:    textArea,
 		progressBar: progressBar,
 	}, nil
 }
 
-func newButtonResources(fonts *fonts) (*buttonResources, error) {
+func newButtonResources(fonts *Fonts) (*buttonResources, error) {
 	idle, err := loadImageNineSlice("assets/graphics/button-idle.png", 12, 0)
 	if err != nil {
 		return nil, err
@@ -290,16 +290,16 @@ func newButtonResources(fonts *fonts) (*buttonResources, error) {
 	}
 
 	return &buttonResources{
-		image: i,
+		Image: i,
 
-		text: &widget.ButtonTextColor{
+		Text: &widget.ButtonTextColor{
 			Idle:     hexToColor(buttonIdleColor),
 			Disabled: hexToColor(buttonDisabledColor),
 		},
 
-		face: fonts.face,
+		Face: fonts.face,
 
-		padding: widget.Insets{
+		Padding: widget.Insets{
 			Left:  30,
 			Right: 30,
 		},
@@ -355,7 +355,7 @@ func newCheckboxResources() (*checkboxResources, error) {
 	}, nil
 }
 
-func newLabelResources(fonts *fonts) *labelResources {
+func newLabelResources(fonts *Fonts) *labelResources {
 	return &labelResources{
 		text: &widget.LabelColor{
 			Idle:     hexToColor(labelIdleColor),
@@ -366,7 +366,7 @@ func newLabelResources(fonts *fonts) *labelResources {
 	}
 }
 
-func newComboButtonResources(fonts *fonts) (*comboButtonResources, error) {
+func newComboButtonResources(fonts *Fonts) (*comboButtonResources, error) {
 	idle, err := loadImageNineSlice("assets/graphics/combo-button-idle.png", 12, 0)
 	if err != nil {
 		return nil, err
@@ -417,7 +417,7 @@ func newComboButtonResources(fonts *fonts) (*comboButtonResources, error) {
 	}, nil
 }
 
-func newListResources(fonts *fonts) (*listResources, error) {
+func newListResources(fonts *Fonts) (*listResources, error) {
 	idle, err := newImageFromFile("assets/graphics/list-idle.png")
 	if err != nil {
 		return nil, err
@@ -597,7 +597,7 @@ func newPanelResources() (*panelResources, error) {
 	}, nil
 }
 
-func newTabBookResources(fonts *fonts) (*tabBookResources, error) {
+func newTabBookResources(fonts *Fonts) (*tabBookResources, error) {
 
 	return &tabBookResources{
 		buttonFace: fonts.face,
@@ -614,7 +614,7 @@ func newTabBookResources(fonts *fonts) (*tabBookResources, error) {
 	}, nil
 }
 
-func newHeaderResources(fonts *fonts) (*headerResources, error) {
+func newHeaderResources(fonts *Fonts) (*headerResources, error) {
 	bg, err := loadImageNineSlice("assets/graphics/header.png", 446, 9)
 	if err != nil {
 		return nil, err
@@ -635,7 +635,7 @@ func newHeaderResources(fonts *fonts) (*headerResources, error) {
 	}, nil
 }
 
-func newTextInputResources(fonts *fonts) (*textInputResources, error) {
+func newTextInputResources(fonts *Fonts) (*textInputResources, error) {
 	idle, err := newImageFromFile("assets/graphics/text-input-idle.png")
 	if err != nil {
 		return nil, err
@@ -647,21 +647,21 @@ func newTextInputResources(fonts *fonts) (*textInputResources, error) {
 	}
 
 	return &textInputResources{
-		image: &widget.TextInputImage{
+		Image: &widget.TextInputImage{
 			Idle:     image.NewNineSlice(idle, [3]int{9, 14, 6}, [3]int{9, 14, 6}),
 			Disabled: image.NewNineSlice(disabled, [3]int{9, 14, 6}, [3]int{9, 14, 6}),
 		},
 
-		padding: widget.Insets{
+		Padding: widget.Insets{
 			Left:   8,
 			Right:  8,
 			Top:    4,
 			Bottom: 4,
 		},
 
-		face: fonts.face,
+		Face: fonts.face,
 
-		color: &widget.TextInputColor{
+		Color: &widget.TextInputColor{
 			Idle:          hexToColor(textIdleColor),
 			Disabled:      hexToColor(textDisabledColor),
 			Caret:         hexToColor(textInputCaretColor),
@@ -670,7 +670,7 @@ func newTextInputResources(fonts *fonts) (*textInputResources, error) {
 	}, nil
 }
 
-func newTextAreaResources(fonts *fonts) (*textAreaResources, error) {
+func newTextAreaResources(fonts *Fonts) (*textAreaResources, error) {
 	idle, err := newImageFromFile("assets/graphics/list-idle.png")
 	if err != nil {
 		return nil, err
@@ -743,7 +743,7 @@ func newTextAreaResources(fonts *fonts) (*textAreaResources, error) {
 	}, nil
 }
 
-func newToolTipResources(fonts *fonts) (*toolTipResources, error) {
+func newToolTipResources(fonts *Fonts) (*toolTipResources, error) {
 	bg, err := newImageFromFile("assets/graphics/tool-tip.png")
 	if err != nil {
 		return nil, err
