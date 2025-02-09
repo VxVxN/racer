@@ -10,7 +10,7 @@ import (
 	"github.com/ebitenui/ebitenui/widget"
 )
 
-func mainPage(game *Game, res *ui.UiResources) widget.PreferredSizeLocateableWidget {
+func newMainPage(game *Game, res *ui.UiResources) widget.PreferredSizeLocateableWidget {
 	container := ui.NewPageContentContainer()
 
 	buttonOpts := widget.ButtonOpts.WidgetOpts(widget.WidgetOpts.LayoutData(widget.RowLayoutData{
@@ -52,7 +52,7 @@ func mainPage(game *Game, res *ui.UiResources) widget.PreferredSizeLocateableWid
 	return container
 }
 
-func menuPage(game *Game, res *ui.UiResources) widget.PreferredSizeLocateableWidget {
+func newMenuPage(game *Game, res *ui.UiResources) widget.PreferredSizeLocateableWidget {
 	container := ui.NewPageContentContainer()
 
 	buttonOpts := widget.ButtonOpts.WidgetOpts(widget.WidgetOpts.LayoutData(widget.RowLayoutData{
@@ -129,7 +129,12 @@ func playerRatingsPage(game *Game, res *ui.UiResources) widget.PreferredSizeLoca
 	return container
 }
 
-func setPlayerRatingPage(game *Game, res *ui.UiResources) widget.PreferredSizeLocateableWidget {
+type setPlayerRatingPage struct {
+	widget    widget.PreferredSizeLocateableWidget
+	textInput *widget.TextInput
+}
+
+func newSetPlayerRatingPage(game *Game, res *ui.UiResources) *setPlayerRatingPage {
 	container := ui.NewPageContentContainer()
 
 	gridLayoutContainer := widget.NewContainer(
@@ -171,10 +176,13 @@ func setPlayerRatingPage(game *Game, res *ui.UiResources) widget.PreferredSizeLo
 	textInput.Focus(true)
 	gridLayoutContainer.AddChild(textInput)
 
-	return container
+	return &setPlayerRatingPage{
+		widget:    container,
+		textInput: textInput,
+	}
 }
 
-func settingsPage(res *ui.UiResources) widget.PreferredSizeLocateableWidget {
+func newSettingsPage(res *ui.UiResources) widget.PreferredSizeLocateableWidget {
 	container := ui.NewPageContentContainer()
 
 	rayLayoutContainer := widget.NewContainer(

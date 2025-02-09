@@ -18,7 +18,6 @@ import (
 	playerpkg "github.com/VxVxN/game/pkg/player"
 	"github.com/VxVxN/game/pkg/rectangle"
 	"github.com/VxVxN/game/pkg/statisticer"
-	"github.com/VxVxN/game/pkg/textfield"
 	"github.com/VxVxN/gamedevlib/eventmanager"
 	"github.com/VxVxN/gamedevlib/raycasting"
 	"github.com/ebitenui/ebitenui"
@@ -32,13 +31,14 @@ import (
 
 type Game struct {
 	// UI
-	resourcesUI       *ui.UiResources
-	mainMenuUI        *ebitenui.UI
-	mainMenuButtons   *ui2.ButtonControl
-	menuUI            *ebitenui.UI
-	menuButtons       *ui2.ButtonControl
-	playerRatingsUI   *ebitenui.UI
-	setPlayerRatingUI *ebitenui.UI
+	resourcesUI         *ui.UiResources
+	mainMenuUI          *ebitenui.UI
+	mainMenuButtons     *ui2.ButtonControl
+	menuUI              *ebitenui.UI
+	menuButtons         *ui2.ButtonControl
+	playerRatingsUI     *ebitenui.UI
+	setPlayerRatingUI   *ebitenui.UI
+	setPlayerRatingPage *setPlayerRatingPage
 
 	windowWidth, windowHeight  float64
 	startPlayerX, startPlayerY float64
@@ -50,7 +50,6 @@ type Game struct {
 	cars                       *cargenerator.CarGenerator
 	stage                      Stage
 	statisticer                *statisticer.Statisticer
-	textField                  *textfield.TextField
 	audioPlayer                *audioplayer.AudioPlayer
 	nightImage                 *ebiten.Image
 	triangleImage              *ebiten.Image
@@ -161,13 +160,6 @@ func NewGame() (*Game, error) {
 		return nil, fmt.Errorf("failed to create new face source: %v", err)
 	}
 
-	inputTextFace := &text.GoTextFace{
-		Source: textFaceSource,
-		Size:   32,
-	}
-
-	textField := textfield.NewTextField(inputTextFace, image.Rect(16, 150, int(width-16), int(150+inputTextFace.Size)), false)
-
 	supportedKeys := []ebiten.Key{
 		ebiten.KeyUp,
 		ebiten.KeyDown,
@@ -187,7 +179,6 @@ func NewGame() (*Game, error) {
 		textFaceSource:     textFaceSource,
 		stage:              MainMenuStage,
 		statisticer:        statisticer.NewStatisticer(),
-		textField:          textField,
 		audioPlayer:        audioPlayer,
 		nightImage:         ebiten.NewImage(int(width), int(height)),
 		triangleImage:      ebiten.NewImage(int(width), int(height)),
@@ -216,8 +207,8 @@ func NewGame() (*Game, error) {
 	}
 
 	game.resourcesUI = res
-	game.mainMenuUI = createUI("Racer", res, mainPage(game, res), true)
-	game.menuUI = createUI("Menu", res, menuPage(game, res), true)
+	game.mainMenuUI = createUI("Racer", res, newMainPage(game, res), true)
+	game.menuUI = createUI("Menu", res, newMenuPage(game, res), true)
 	game.playerRatingsUI = createUI("Player ratings", res, playerRatingsPage(game, res), false)
 
 	game.addEvents()
@@ -233,13 +224,6 @@ func (game *Game) Update() error {
 	//}
 	if err := game.audioPlayer.Update(); err != nil {
 		log.Fatalf("Failed to update audio: %v", err)
-	}
-	if game.stage == SetPlayerRecordStage {
-		game.textField.Focus()
-		if err := game.textField.Update(); err != nil {
-			log.Fatalf("Failed to update text: %v", err)
-		}
-		return nil
 	}
 	if game.stage != GameStage {
 		return nil
@@ -260,7 +244,8 @@ func (game *Game) Update() error {
 		game.explosionAnimation.SetCallback(func() {
 			defer game.audioPlayer.Play()
 			game.setStage(GameOverStage)
-			game.setPlayerRatingUI = createUI("New record!", game.resourcesUI, setPlayerRatingPage(game, game.resourcesUI), true)
+			game.setPlayerRatingPage = newSetPlayerRatingPage(game, game.resourcesUI)
+			game.setPlayerRatingUI = createUI("New record!", game.resourcesUI, game.setPlayerRatingPage.widget, true)
 			records, err := game.statisticer.Load()
 			if err != nil {
 				log.Fatalf("Failed to load statistics: %v", err)
@@ -406,10 +391,12 @@ func (game *Game) addEvents() {
 		case StatisticsStage:
 			game.setStage(MainMenuStage)
 		case SetPlayerRecordStage:
-			if game.textField.Text() == "" {
+			if game.setPlayerRatingPage.textInput.GetText() == "" {
 				break
 			}
-			game.player.SetName(game.textField.Text())
+			game.player.SetName(game.setPlayerRatingPage.textInput.GetText())
+			game.setPlayerRatingPage.textInput.SetText("")
+
 			records, err := game.statisticer.Load()
 			if err != nil {
 				log.Fatalf("Failed to load statistics: %v", err)

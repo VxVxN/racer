@@ -62,28 +62,3 @@ func (game *Game) drawGameStage(screen *ebiten.Image) {
 		text.Draw(screen, "Game over", textFace, op)
 	}
 }
-
-func (game *Game) drawSetPlayerRecordStage(screen *ebiten.Image) {
-	textFace := &text.GoTextFace{
-		Source: game.textFaceSource,
-		Size:   24,
-	}
-
-	op := &text.DrawOptions{}
-	op.GeoM.Translate(game.windowWidth/2, 50)
-	op.ColorScale.Scale(255, 255, 255, 1)
-	op.LayoutOptions.PrimaryAlign = text.AlignCenter
-	text.Draw(screen, fmt.Sprintf("Your new record: %d", int(game.player.Points())), textFace, op)
-
-	textFace = &text.GoTextFace{
-		Source: game.textFaceSource,
-		Size:   24,
-	}
-
-	op = &text.DrawOptions{}
-	op.GeoM.Translate(game.windowWidth/2, 100)
-	op.ColorScale.Scale(255, 255, 255, 1)
-	op.LayoutOptions.PrimaryAlign = text.AlignCenter
-	text.Draw(screen, "Enter your name:", textFace, op)
-	game.textField.Draw(screen)
-}
