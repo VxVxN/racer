@@ -58,8 +58,5 @@ func (s *Statisticer) Save(records []Record) error {
 	for _, recotd := range records {
 		data += fmt.Sprintf("%s,%d\n", recotd.Name, recotd.Points)
 	}
-	if err := os.WriteFile("statistics.txt", []byte(data), 0644); err != nil {
-		return err
-	}
-	return nil
+	return os.WriteFile("statistics.txt", []byte(data), 0644)
 }

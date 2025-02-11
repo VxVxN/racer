@@ -99,3 +99,11 @@ func (audioPlayer *AudioPlayer) Play() {
 func (audioPlayer *AudioPlayer) Pause() {
 	audioPlayer.player.Pause()
 }
+
+func (audioPlayer *AudioPlayer) SetVolume(volume float64) {
+	audioPlayer.player.SetVolume(volume)
+}
+
+func (audioPlayer *AudioPlayer) Volume() float64 {
+	return audioPlayer.player.Volume()
+}

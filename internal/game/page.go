@@ -6,6 +6,7 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/VxVxN/game/internal/settings"
 	"github.com/VxVxN/game/internal/ui"
 	"github.com/ebitenui/ebitenui/widget"
 )
@@ -38,6 +39,15 @@ func newMainPage(game *Game, res *ui.UiResources) widget.PreferredSizeLocateable
 		}))
 	container.AddChild(playerRatingsButton)
 
+	settingsButton := widget.NewButton(
+		buttonOpts,
+		widget.ButtonOpts.Image(res.Button.Image),
+		widget.ButtonOpts.Text("Settings", res.Button.Face, res.Button.Text),
+		widget.ButtonOpts.ClickedHandler(func(args *widget.ButtonClickedEventArgs) {
+			game.setStage(SettingsStage)
+		}))
+	container.AddChild(settingsButton)
+
 	exitButton := widget.NewButton(
 		buttonOpts,
 		widget.ButtonOpts.Image(res.Button.Image),
@@ -47,7 +57,7 @@ func newMainPage(game *Game, res *ui.UiResources) widget.PreferredSizeLocateable
 		}))
 	container.AddChild(exitButton)
 
-	game.mainMenuButtons = ui.NewButtonControl([]*widget.Button{newGameButton, playerRatingsButton, exitButton})
+	game.mainMenuButtons = ui.NewButtonControl([]*widget.Button{newGameButton, playerRatingsButton, settingsButton, exitButton})
 
 	return container
 }
@@ -94,7 +104,7 @@ func newMenuPage(game *Game, res *ui.UiResources) widget.PreferredSizeLocateable
 	return container
 }
 
-func playerRatingsPage(game *Game, res *ui.UiResources) widget.PreferredSizeLocateableWidget {
+func newPlayerRatingsPage(game *Game, res *ui.UiResources) widget.PreferredSizeLocateableWidget {
 	container := ui.NewPageContentContainer()
 
 	records, err := game.statisticer.Load()
@@ -182,7 +192,7 @@ func newSetPlayerRatingPage(game *Game, res *ui.UiResources) *setPlayerRatingPag
 	}
 }
 
-func newSettingsPage(res *ui.UiResources) widget.PreferredSizeLocateableWidget {
+func newSettingsPage(game *Game, res *ui.UiResources) widget.PreferredSizeLocateableWidget {
 	container := ui.NewPageContentContainer()
 
 	rayLayoutContainer := widget.NewContainer(
@@ -198,7 +208,13 @@ func newSettingsPage(res *ui.UiResources) widget.PreferredSizeLocateableWidget {
 		widget.ButtonOpts.Image(res.Button.Image),
 		widget.ButtonOpts.Text("Save", res.Button.Face, res.Button.Text),
 		widget.ButtonOpts.ClickedHandler(func(args *widget.ButtonClickedEventArgs) {
-			// todo save
+			game.stage = MainMenuStage
+			game.settings.SavedSettings = game.settings.RawSettings
+			if err := game.settings.Save(); err != nil {
+				game.logger.Printf("[ERROR] Error saving settings: %v", err)
+				return
+			}
+			game.ApplySettings()
 		}))
 	rayLayoutContainer.AddChild(saveButton)
 
@@ -210,8 +226,8 @@ func newSettingsPage(res *ui.UiResources) widget.PreferredSizeLocateableWidget {
 		widget.ButtonOpts.Image(res.Button.Image),
 		widget.ButtonOpts.Text("Back", res.Button.Face, res.Button.Text),
 		widget.ButtonOpts.ClickedHandler(func(args *widget.ButtonClickedEventArgs) {
-			// todo back
-			os.Exit(0)
+			game.stage = MainMenuStage
+			game.settings.RawSettings = game.settings.SavedSettings
 		}))
 	rayLayoutContainer.AddChild(backButton)
 
@@ -233,11 +249,11 @@ func newSettingsPage(res *ui.UiResources) widget.PreferredSizeLocateableWidget {
 		widget.TextOpts.Text("Resolution", res.Text.Face, res.Text.IdleColor)))
 
 	entries := []interface{}{
-		"Full screen",
-		"1920x1080",
-		"1680x1050",
-		"1280x1024",
-		"1280x720",
+		string(settings.ResolutionFullScreen),
+		string(settings.Resolution1920x1080),
+		string(settings.Resolution1680x1050),
+		string(settings.Resolution1280x1024),
+		string(settings.Resolution1280x720),
 	}
 
 	cb := ui.NewListComboButton(
@@ -249,9 +265,10 @@ func newSettingsPage(res *ui.UiResources) widget.PreferredSizeLocateableWidget {
 			return e.(string)
 		},
 		func(args *widget.ListComboButtonEntrySelectedEventArgs) {
-			// todo set resolution
+			game.settings.RawSettings.Resolution = settings.Resolution(args.Entry.(string))
 		},
 		res)
+	cb.SetSelectedEntry(string(game.settings.SavedSettings.Resolution))
 	gridLayoutContainer.AddChild(cb)
 
 	return container

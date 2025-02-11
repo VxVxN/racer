@@ -13,7 +13,6 @@ func main() {
 		log.Fatalf("Failed to init game: %v", err)
 	}
 
-	ebiten.SetFullscreen(true)
 	ebiten.SetWindowTitle("Racer")
 
 	if err = ebiten.RunGame(game); err != nil {

@@ -9,6 +9,7 @@ import (
 	"sort"
 
 	"github.com/VxVxN/game/internal/cargenerator"
+	"github.com/VxVxN/game/internal/settings"
 	"github.com/VxVxN/game/internal/shadow"
 	"github.com/VxVxN/game/internal/ui"
 	ui2 "github.com/VxVxN/game/internal/ui"
@@ -39,6 +40,7 @@ type Game struct {
 	playerRatingsUI     *ebitenui.UI
 	setPlayerRatingUI   *ebitenui.UI
 	setPlayerRatingPage *setPlayerRatingPage
+	settingsUI          *ebitenui.UI
 
 	windowWidth, windowHeight  float64
 	startPlayerX, startPlayerY float64
@@ -57,7 +59,7 @@ type Game struct {
 	sunDirection               shadow.DirectionShadow
 	explosionAnimation         *animation.Animation
 	logger                     *log.Logger
-	//globalTime                 time.Time
+	settings                   *settings.Settings
 }
 
 type Stage int
@@ -88,6 +90,8 @@ func (s Stage) String() string {
 		return "StatisticsStage"
 	case SetPlayerRecordStage:
 		return "SetPlayerRecordStage"
+	case SettingsStage:
+		return "SettingsStage"
 	}
 	return ""
 }
@@ -169,6 +173,11 @@ func NewGame() (*Game, error) {
 		ebiten.KeyEnter,
 	}
 
+	gameSettings, err := settings.New()
+	if err != nil {
+		return nil, fmt.Errorf("failed to init game settings: %v", err)
+	}
+
 	game := &Game{
 		scrollSpeed:  10.0,
 		windowWidth:  width,
@@ -186,7 +195,10 @@ func NewGame() (*Game, error) {
 		cars:               cargenerator.New([]*ebiten.Image{greenCar, orangeCar, redCar, grayCar}, []*ebiten.Image{redTruck, greenTruck}, []*ebiten.Image{blueLongTruck, greenLongTruck}, height, startRoad, carShadow, truckShadow, longTruckShadow),
 		player:             playerpkg.NewPlayer(playerCar, playerShadow),
 		logger:             logger,
+		settings:           gameSettings,
 	}
+	game.ApplySettings()
+
 	game.explosionAnimation.SetRepeatable(false)
 	game.explosionAnimation.SetScale(0.4, 0.4)
 	if err = game.explosionAnimation.SetSound(audioContext, "assets/sounds/silnyiy-vzryiv-starogo-doma.mp3"); err != nil {
@@ -209,7 +221,8 @@ func NewGame() (*Game, error) {
 	game.resourcesUI = res
 	game.mainMenuUI = createUI("Racer", res, newMainPage(game, res), true)
 	game.menuUI = createUI("Menu", res, newMenuPage(game, res), true)
-	game.playerRatingsUI = createUI("Player ratings", res, playerRatingsPage(game, res), false)
+	game.playerRatingsUI = createUI("Player ratings", res, newPlayerRatingsPage(game, res), false)
+	game.settingsUI = createUI("Settings", res, newSettingsPage(game, res), false)
 
 	game.addEvents()
 
@@ -217,7 +230,14 @@ func NewGame() (*Game, error) {
 }
 
 func (game *Game) Update() error {
-	game.mainMenuUI.Update()
+	switch game.stage {
+	case MainMenuStage:
+		game.mainMenuUI.Update()
+	case MenuStage:
+		game.menuUI.Update()
+	case SettingsStage:
+		game.settingsUI.Update()
+	}
 	game.eventManager.Update()
 	//if time.Since(game.globalTime) < time.Second/time.Duration(60) {
 	//	return nil
@@ -307,7 +327,7 @@ func (game *Game) Draw(screen *ebiten.Image) {
 	case GameStage, GameOverStage:
 		game.drawGameStage(screen)
 	case SettingsStage:
-		// todo
+		game.settingsUI.Draw(screen)
 	default:
 	}
 }
@@ -405,7 +425,7 @@ func (game *Game) addEvents() {
 			if err := game.statisticer.Save(resultRecords); err != nil {
 				log.Fatalf("Failed to save results: %v", err)
 			}
-			game.playerRatingsUI = createUI("Player ratings", game.resourcesUI, playerRatingsPage(game, game.resourcesUI), false)
+			game.playerRatingsUI = createUI("Player ratings", game.resourcesUI, newPlayerRatingsPage(game, game.resourcesUI), false)
 			game.setStage(StatisticsStage)
 		}
 	})
@@ -499,5 +519,15 @@ func createUI(title string, res *ui.UiResources, page widget.PreferredSizeLocate
 
 	return &ebitenui.UI{
 		Container: rootContainer,
+	}
+}
+
+func (game *Game) ApplySettings() {
+	w, h := game.settings.SavedSettings.Resolution.Size()
+	ebiten.SetFullscreen(game.settings.SavedSettings.Resolution == settings.ResolutionFullScreen)
+	game.windowWidth, game.windowHeight = float64(w), float64(h)
+
+	if game.settings.SavedSettings.Resolution != settings.ResolutionFullScreen {
+		ebiten.SetWindowSize(w, h)
 	}
 }
