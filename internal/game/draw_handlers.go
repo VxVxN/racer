@@ -5,6 +5,7 @@ import (
 	"image/color"
 
 	"github.com/VxVxN/game/internal/shadow"
+	"github.com/VxVxN/game/internal/stager"
 	"github.com/VxVxN/gamedevlib/raycasting"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/text/v2"
@@ -49,7 +50,7 @@ func (game *Game) drawGameStage(screen *ebiten.Image) {
 		screen.DrawImage(game.nightImage, imageOp)
 	}
 	game.explosionAnimation.Draw(screen)
-	if game.stage == GameOverStage {
+	if game.stager.Stage() == stager.GameOverStage {
 		textFace = &text.GoTextFace{
 			Source: game.textFaceSource,
 			Size:   64,

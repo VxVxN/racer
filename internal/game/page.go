@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/VxVxN/game/internal/settings"
+	"github.com/VxVxN/game/internal/stager"
 	"github.com/VxVxN/game/internal/ui"
 	"github.com/ebitenui/ebitenui/widget"
 )
@@ -35,7 +36,7 @@ func newMainPage(game *Game, res *ui.UiResources) widget.PreferredSizeLocateable
 		widget.ButtonOpts.Image(res.Button.Image),
 		widget.ButtonOpts.Text("Player ratings", res.Button.Face, res.Button.Text),
 		widget.ButtonOpts.ClickedHandler(func(args *widget.ButtonClickedEventArgs) {
-			game.setStage(StatisticsStage)
+			game.stager.SetStage(stager.StatisticsStage)
 		}))
 	container.AddChild(playerRatingsButton)
 
@@ -45,7 +46,7 @@ func newMainPage(game *Game, res *ui.UiResources) widget.PreferredSizeLocateable
 		widget.ButtonOpts.Text("Settings", res.Button.Face, res.Button.Text),
 		widget.ButtonOpts.ClickedHandler(func(args *widget.ButtonClickedEventArgs) {
 			game.settingsUI = createUI("Settings", res, newSettingsPage(game, res), false)
-			game.setStage(SettingsStage)
+			game.stager.SetStage(stager.SettingsStage)
 		}))
 	container.AddChild(settingsButton)
 
@@ -78,7 +79,7 @@ func newMenuPage(game *Game, res *ui.UiResources) widget.PreferredSizeLocateable
 		widget.ButtonOpts.Text("Continue game", res.Button.Face, res.Button.Text),
 		widget.ButtonOpts.TextPadding(res.Button.Padding),
 		widget.ButtonOpts.ClickedHandler(func(args *widget.ButtonClickedEventArgs) {
-			game.setStage(GameStage)
+			game.stager.SetStage(stager.GameStage)
 		}))
 	container.AddChild(continueGameButton)
 
@@ -87,9 +88,19 @@ func newMenuPage(game *Game, res *ui.UiResources) widget.PreferredSizeLocateable
 		widget.ButtonOpts.Image(res.Button.Image),
 		widget.ButtonOpts.Text("Go back to the main menu", res.Button.Face, res.Button.Text),
 		widget.ButtonOpts.ClickedHandler(func(args *widget.ButtonClickedEventArgs) {
-			game.setStage(MainMenuStage)
+			game.stager.SetStage(stager.MainMenuStage)
 		}))
 	container.AddChild(backToMainMenuButton)
+
+	settingsButton := widget.NewButton(
+		buttonOpts,
+		widget.ButtonOpts.Image(res.Button.Image),
+		widget.ButtonOpts.Text("Settings", res.Button.Face, res.Button.Text),
+		widget.ButtonOpts.ClickedHandler(func(args *widget.ButtonClickedEventArgs) {
+			game.settingsUI = createUI("Settings", res, newSettingsPage(game, res), false)
+			game.stager.SetStage(stager.SettingsStage)
+		}))
+	container.AddChild(settingsButton)
 
 	exitButton := widget.NewButton(
 		buttonOpts,
@@ -100,7 +111,7 @@ func newMenuPage(game *Game, res *ui.UiResources) widget.PreferredSizeLocateable
 		}))
 	container.AddChild(exitButton)
 
-	game.menuButtons = ui.NewButtonControl([]*widget.Button{continueGameButton, backToMainMenuButton, exitButton})
+	game.menuButtons = ui.NewButtonControl([]*widget.Button{continueGameButton, backToMainMenuButton, settingsButton, exitButton})
 
 	return container
 }
@@ -209,7 +220,7 @@ func newSettingsPage(game *Game, res *ui.UiResources) widget.PreferredSizeLocate
 		widget.ButtonOpts.Image(res.Button.Image),
 		widget.ButtonOpts.Text("Save", res.Button.Face, res.Button.Text),
 		widget.ButtonOpts.ClickedHandler(func(args *widget.ButtonClickedEventArgs) {
-			game.stage = MainMenuStage
+			game.stager.RecoveryLastStage()
 			game.settings.Save()
 			if err := game.settings.WriteToFile(); err != nil {
 				game.logger.Printf("[ERROR] Error saving settings: %v", err)
@@ -227,7 +238,7 @@ func newSettingsPage(game *Game, res *ui.UiResources) widget.PreferredSizeLocate
 		widget.ButtonOpts.Image(res.Button.Image),
 		widget.ButtonOpts.Text("Back", res.Button.Face, res.Button.Text),
 		widget.ButtonOpts.ClickedHandler(func(args *widget.ButtonClickedEventArgs) {
-			game.stage = MainMenuStage
+			game.stager.RecoveryLastStage()
 			game.ApplySettings()
 		}))
 	rayLayoutContainer.AddChild(backButton)

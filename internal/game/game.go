@@ -11,6 +11,7 @@ import (
 	"github.com/VxVxN/game/internal/cargenerator"
 	"github.com/VxVxN/game/internal/settings"
 	"github.com/VxVxN/game/internal/shadow"
+	"github.com/VxVxN/game/internal/stager"
 	"github.com/VxVxN/game/internal/ui"
 	ui2 "github.com/VxVxN/game/internal/ui"
 	"github.com/VxVxN/game/pkg/animation"
@@ -29,6 +30,8 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/text/v2"
 	"golang.org/x/image/font/gofont/goregular"
 )
+
+const sampleRate = 48000
 
 type Game struct {
 	// UI
@@ -50,7 +53,7 @@ type Game struct {
 	player                     *playerpkg.Player
 	background                 *background.Background
 	cars                       *cargenerator.CarGenerator
-	stage                      Stage
+	stager                     *stager.Stager
 	statisticer                *statisticer.Statisticer
 	audioPlayer                *audioplayer.AudioPlayer
 	nightImage                 *ebiten.Image
@@ -60,40 +63,6 @@ type Game struct {
 	explosionAnimation         *animation.Animation
 	logger                     *log.Logger
 	settings                   *settings.Settings
-}
-
-type Stage int
-
-const (
-	GameStage Stage = iota
-	GameOverStage
-	MainMenuStage
-	MenuStage
-	StatisticsStage
-	SetPlayerRecordStage
-	SettingsStage
-
-	sampleRate = 48000
-)
-
-func (s Stage) String() string {
-	switch s {
-	case GameStage:
-		return "GameStage"
-	case GameOverStage:
-		return "GameOverStage"
-	case MainMenuStage:
-		return "MainMenuStage"
-	case MenuStage:
-		return "MenuStage"
-	case StatisticsStage:
-		return "StatisticsStage"
-	case SetPlayerRecordStage:
-		return "SetPlayerRecordStage"
-	case SettingsStage:
-		return "SettingsStage"
-	}
-	return ""
 }
 
 func NewGame() (*Game, error) {
@@ -186,7 +155,7 @@ func NewGame() (*Game, error) {
 		//globalTime:         time.Now(),
 		eventManager:       eventmanager.NewEventManager(supportedKeys),
 		textFaceSource:     textFaceSource,
-		stage:              MainMenuStage,
+		stager:             stager.New(),
 		statisticer:        statisticer.NewStatisticer(),
 		audioPlayer:        audioPlayer,
 		nightImage:         ebiten.NewImage(int(width), int(height)),
@@ -197,6 +166,9 @@ func NewGame() (*Game, error) {
 		logger:             logger,
 		settings:           gameSettings,
 	}
+	game.stager.SetOnChange(func(oldStage, newStage stager.Stage) {
+		game.logger.Printf("[INFO] Setting stage to %v", newStage)
+	})
 
 	game.explosionAnimation.SetRepeatable(false)
 	game.explosionAnimation.SetScale(0.4, 0.4)
@@ -231,14 +203,14 @@ func NewGame() (*Game, error) {
 }
 
 func (game *Game) Update() error {
-	switch game.stage {
-	case MainMenuStage:
+	switch game.stager.Stage() {
+	case stager.MainMenuStage:
 		game.mainMenuUI.Update()
-	case MenuStage:
+	case stager.MenuStage:
 		game.menuUI.Update()
-	case SetPlayerRecordStage:
+	case stager.SetPlayerRecordStage:
 		game.playerRatingsUI.Update()
-	case SettingsStage:
+	case stager.SettingsStage:
 		game.settingsUI.Update()
 	}
 	game.eventManager.Update()
@@ -248,7 +220,7 @@ func (game *Game) Update() error {
 	if err := game.audioPlayer.Update(); err != nil {
 		log.Fatalf("Failed to update audio: %v", err)
 	}
-	if game.stage != GameStage {
+	if game.stager.Stage() != stager.GameStage {
 		return nil
 	}
 
@@ -266,7 +238,7 @@ func (game *Game) Update() error {
 		game.explosionAnimation.Start()
 		game.explosionAnimation.SetCallback(func() {
 			defer game.audioPlayer.Play()
-			game.setStage(GameOverStage)
+			game.stager.SetStage(stager.GameOverStage)
 			game.setPlayerRatingPage = newSetPlayerRatingPage(game, game.resourcesUI)
 			game.setPlayerRatingUI = createUI("New record!", game.resourcesUI, game.setPlayerRatingPage.widget, true)
 			records, err := game.statisticer.Load()
@@ -277,7 +249,7 @@ func (game *Game) Update() error {
 			if !isRecord {
 				return
 			}
-			game.setStage(SetPlayerRecordStage)
+			game.stager.SetStage(stager.SetPlayerRecordStage)
 		})
 		return nil
 	}
@@ -318,18 +290,18 @@ func preparePlayerRatings(records []statisticer.Record, playerName string, playe
 }
 
 func (game *Game) Draw(screen *ebiten.Image) {
-	switch game.stage {
-	case MainMenuStage:
+	switch game.stager.Stage() {
+	case stager.MainMenuStage:
 		game.mainMenuUI.Draw(screen)
-	case MenuStage:
+	case stager.MenuStage:
 		game.menuUI.Draw(screen)
-	case StatisticsStage:
+	case stager.StatisticsStage:
 		game.playerRatingsUI.Draw(screen)
-	case SetPlayerRecordStage:
+	case stager.SetPlayerRecordStage:
 		game.setPlayerRatingUI.Draw(screen)
-	case GameStage, GameOverStage:
+	case stager.GameStage, stager.GameOverStage:
 		game.drawGameStage(screen)
-	case SettingsStage:
+	case stager.SettingsStage:
 		game.settingsUI.Draw(screen)
 	default:
 	}
@@ -341,79 +313,79 @@ func (game *Game) Layout(screenWidthPx, screenHeightPx int) (int, int) {
 
 func (game *Game) addEvents() {
 	game.eventManager.AddPressEvent(ebiten.KeyRight, func() {
-		switch game.stage {
-		case GameStage:
+		switch game.stager.Stage() {
+		case stager.GameStage:
 			if !game.player.Dead() && game.player.X < game.windowWidth/2+370 {
 				game.player.Move(ebiten.KeyRight)
 			}
-		case GameOverStage:
-		case MainMenuStage:
+		case stager.GameOverStage:
+		case stager.MainMenuStage:
 		}
 	})
 	game.eventManager.AddPressEvent(ebiten.KeyLeft, func() {
-		switch game.stage {
-		case GameStage:
+		switch game.stager.Stage() {
+		case stager.GameStage:
 			if !game.player.Dead() && game.player.X > game.windowWidth/2-480 {
 				game.player.Move(ebiten.KeyLeft)
 			}
-		case GameOverStage:
-		case MainMenuStage:
+		case stager.GameOverStage:
+		case stager.MainMenuStage:
 		}
 	})
 	game.eventManager.AddPressEvent(ebiten.KeyUp, func() {
-		switch game.stage {
-		case GameStage:
+		switch game.stager.Stage() {
+		case stager.GameStage:
 			if !game.player.Dead() && game.player.Y > 0 {
 				game.player.Move(ebiten.KeyUp)
 			}
-		case GameOverStage:
+		case stager.GameOverStage:
 		}
 	})
 	game.eventManager.AddPressedEvent(ebiten.KeyUp, func() {
-		switch game.stage {
-		case MainMenuStage:
+		switch game.stager.Stage() {
+		case stager.MainMenuStage:
 			game.mainMenuButtons.Before()
-		case MenuStage:
+		case stager.MenuStage:
 			game.menuButtons.Before()
 		}
 	})
 	game.eventManager.AddPressEvent(ebiten.KeyDown, func() {
-		switch game.stage {
-		case GameStage:
+		switch game.stager.Stage() {
+		case stager.GameStage:
 			if !game.player.Dead() && game.player.Y < game.windowHeight-210 {
 				game.player.Move(ebiten.KeyDown)
 			}
-		case GameOverStage:
+		case stager.GameOverStage:
 		}
 	})
 	game.eventManager.AddPressedEvent(ebiten.KeyDown, func() {
-		switch game.stage {
-		case MainMenuStage:
+		switch game.stager.Stage() {
+		case stager.MainMenuStage:
 			game.mainMenuButtons.Next()
-		case MenuStage:
+		case stager.MenuStage:
 			game.menuButtons.Next()
 		}
 	})
 	game.eventManager.AddPressEvent(ebiten.KeyEscape, func() {
-		switch game.stage {
-		case GameStage, GameOverStage:
-			game.setStage(MenuStage)
-		case StatisticsStage:
-			game.setStage(MainMenuStage)
+		switch game.stager.Stage() {
+		case stager.GameStage, stager.GameOverStage:
+			game.stager.SetStage(stager.MenuStage)
+		case stager.StatisticsStage:
+			game.stager.SetStage(stager.MainMenuStage)
 		}
 	})
 	game.eventManager.AddPressedEvent(ebiten.KeyEnter, func() {
-		switch game.stage {
-		case GameStage:
-		case GameOverStage:
+		switch game.stager.Stage() {
+		case stager.GameStage:
+		case stager.GameOverStage:
 			game.Reset()
-		case MainMenuStage:
+		case stager.MainMenuStage:
 			game.mainMenuButtons.Click()
-		case MenuStage:
+		case stager.MenuStage:
 			game.menuButtons.Click()
-		case StatisticsStage:
-			game.setStage(MainMenuStage)
-		case SetPlayerRecordStage:
+		case stager.StatisticsStage:
+			game.stager.SetStage(stager.MainMenuStage)
+		case stager.SetPlayerRecordStage:
 			if game.setPlayerRatingPage.textInput.GetText() == "" {
 				break
 			}
@@ -429,7 +401,7 @@ func (game *Game) addEvents() {
 				log.Fatalf("Failed to save results: %v", err)
 			}
 			game.playerRatingsUI = createUI("Player ratings", game.resourcesUI, newPlayerRatingsPage(game, game.resourcesUI), false)
-			game.setStage(StatisticsStage)
+			game.stager.SetStage(stager.StatisticsStage)
 		}
 	})
 }
@@ -449,11 +421,6 @@ func (game *Game) calculateObjects() {
 			game.player.Y - game.windowHeight}}),
 		*raycasting.NewObject([]raycasting.Line{{0, game.player.Y, game.windowWidth, float64(game.player.Y) + 2}}),
 	}
-}
-
-func (game *Game) setStage(newStage Stage) {
-	game.stage = newStage
-	game.logger.Printf("[INFO] Setting stage to %v", newStage)
 }
 
 func ConvertRectangleToObject(rectangle rectangle.Rectangle) raycasting.Object {
@@ -491,7 +458,7 @@ func (game *Game) Reset() {
 	sunDirection := shadow.DirectionShadow(1)
 	game.sunDirection = sunDirection
 
-	game.setStage(GameStage)
+	game.stager.SetStage(stager.GameStage)
 	game.player.Reset()
 	game.player.SetPosition(game.windowWidth/2-float64(game.player.Rectangle.Width)/2, game.windowHeight/2)
 	game.player.SetSunDirection(sunDirection)
