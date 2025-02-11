@@ -8,18 +8,6 @@ import (
 	"log"
 	"sort"
 
-	"github.com/VxVxN/game/internal/cargenerator"
-	"github.com/VxVxN/game/internal/settings"
-	"github.com/VxVxN/game/internal/shadow"
-	"github.com/VxVxN/game/internal/stager"
-	"github.com/VxVxN/game/internal/ui"
-	ui2 "github.com/VxVxN/game/internal/ui"
-	"github.com/VxVxN/game/pkg/animation"
-	"github.com/VxVxN/game/pkg/audioplayer"
-	"github.com/VxVxN/game/pkg/background"
-	playerpkg "github.com/VxVxN/game/pkg/player"
-	"github.com/VxVxN/game/pkg/rectangle"
-	"github.com/VxVxN/game/pkg/statisticer"
 	"github.com/VxVxN/gamedevlib/eventmanager"
 	"github.com/VxVxN/gamedevlib/raycasting"
 	"github.com/ebitenui/ebitenui"
@@ -29,6 +17,18 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/hajimehoshi/ebiten/v2/text/v2"
 	"golang.org/x/image/font/gofont/goregular"
+
+	"github.com/VxVxN/game/internal/cargenerator"
+	"github.com/VxVxN/game/internal/settings"
+	"github.com/VxVxN/game/internal/shadow"
+	"github.com/VxVxN/game/internal/stager"
+	"github.com/VxVxN/game/internal/ui"
+	"github.com/VxVxN/game/pkg/animation"
+	"github.com/VxVxN/game/pkg/audioplayer"
+	"github.com/VxVxN/game/pkg/background"
+	playerpkg "github.com/VxVxN/game/pkg/player"
+	"github.com/VxVxN/game/pkg/rectangle"
+	"github.com/VxVxN/game/pkg/statisticer"
 )
 
 const sampleRate = 48000
@@ -37,9 +37,9 @@ type Game struct {
 	// UI
 	resourcesUI         *ui.UiResources
 	mainMenuUI          *ebitenui.UI
-	mainMenuButtons     *ui2.ButtonControl
+	mainMenuButtons     *ui.ButtonControl
 	menuUI              *ebitenui.UI
-	menuButtons         *ui2.ButtonControl
+	menuButtons         *ui.ButtonControl
 	playerRatingsUI     *ebitenui.UI
 	setPlayerRatingUI   *ebitenui.UI
 	setPlayerRatingPage *setPlayerRatingPage
@@ -366,10 +366,14 @@ func (game *Game) addEvents() {
 			game.menuButtons.Next()
 		}
 	})
-	game.eventManager.AddPressEvent(ebiten.KeyEscape, func() {
+	game.eventManager.AddPressedEvent(ebiten.KeyEscape, func() {
 		switch game.stager.Stage() {
 		case stager.GameStage, stager.GameOverStage:
 			game.stager.SetStage(stager.MenuStage)
+		case stager.MenuStage:
+			game.stager.SetStage(stager.GameStage)
+		case stager.SettingsStage:
+			game.stager.RecoveryLastStage()
 		case stager.StatisticsStage:
 			game.stager.SetStage(stager.MainMenuStage)
 		}
