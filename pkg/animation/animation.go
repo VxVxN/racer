@@ -125,3 +125,7 @@ func (animation *Animation) SetSound(audioContext *audio.Context, fileName strin
 
 	return nil
 }
+
+func (animation *Animation) SetVolume(volume float64) {
+	animation.player.SetVolume(volume)
+}

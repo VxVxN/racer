@@ -101,7 +101,7 @@ func newCheckbox(label string, changedHandler widget.CheckboxChangedHandlerFunc,
 					changedHandler(args)
 				}
 			})),
-		widget.LabeledCheckboxOpts.LabelOpts(widget.LabelOpts.Text(label, res.Label.face, res.Label.text)))
+		widget.LabeledCheckboxOpts.LabelOpts(widget.LabelOpts.Text(label, res.Label.Face, res.Label.Text)))
 }
 
 func NewPageContentContainer() *widget.Container {

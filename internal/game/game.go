@@ -197,13 +197,14 @@ func NewGame() (*Game, error) {
 		logger:             logger,
 		settings:           gameSettings,
 	}
-	game.ApplySettings()
 
 	game.explosionAnimation.SetRepeatable(false)
 	game.explosionAnimation.SetScale(0.4, 0.4)
 	if err = game.explosionAnimation.SetSound(audioContext, "assets/sounds/silnyiy-vzryiv-starogo-doma.mp3"); err != nil {
 		return nil, fmt.Errorf("failed to set sound: %v", err)
 	}
+
+	game.ApplySettings()
 
 	m := color.RGBA{ // headlights
 		R: 255,
@@ -530,4 +531,7 @@ func (game *Game) ApplySettings() {
 	if game.settings.SavedSettings.Resolution != settings.ResolutionFullScreen {
 		ebiten.SetWindowSize(w, h)
 	}
+
+	game.audioPlayer.SetVolume(float64(game.settings.SavedSettings.MusicVolume) / 100)
+	game.explosionAnimation.SetVolume(float64(game.settings.SavedSettings.EffectsVolume) / 100)
 }

@@ -16,6 +16,7 @@ type AudioPlayer struct {
 	player                *audio.Player
 	allMusicFiles         map[string]bool
 	notPlayMusicFileNames []string
+	volume                float64
 	logger                *log.Logger
 }
 
@@ -86,6 +87,7 @@ func (audioPlayer *AudioPlayer) nextMusic() error {
 	}
 	audioPlayer.player = player
 	audioPlayer.player.Play()
+	audioPlayer.player.SetVolume(audioPlayer.volume)
 	return nil
 }
 
@@ -102,6 +104,7 @@ func (audioPlayer *AudioPlayer) Pause() {
 
 func (audioPlayer *AudioPlayer) SetVolume(volume float64) {
 	audioPlayer.player.SetVolume(volume)
+	audioPlayer.volume = volume
 }
 
 func (audioPlayer *AudioPlayer) Volume() float64 {

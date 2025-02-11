@@ -9,12 +9,14 @@ import (
 )
 
 type Settings struct {
-	SavedSettings *settings
-	RawSettings   *settings
+	SavedSettings *settingValues
+	RawSettings   *settingValues
 }
 
-type settings struct {
-	Resolution Resolution
+type settingValues struct {
+	Resolution    Resolution
+	MusicVolume   int
+	EffectsVolume int
 }
 
 type Resolution string
@@ -44,30 +46,37 @@ func (resolution *Resolution) Size() (int, int) {
 }
 
 func New() (*Settings, error) {
-	settingsDefault := &settings{
-		Resolution: ResolutionFullScreen,
+	settings := settingValues{
+		Resolution:    ResolutionFullScreen,
+		MusicVolume:   100,
+		EffectsVolume: 100,
 	}
 	data, err := os.ReadFile("settings.json")
 	if err == nil {
 		log.Printf("[INFO] Started settings: %v", string(data))
-		if err = json.Unmarshal(data, settingsDefault); err != nil {
+		if err = json.Unmarshal(data, &settings); err != nil {
 			return nil, err
 		}
-		return &Settings{
-			SavedSettings: settingsDefault,
-			RawSettings:   settingsDefault,
-		}, nil
 	}
+	savedSettings := settings
+	rawSettings := settings
 	return &Settings{
-		SavedSettings: settingsDefault,
-		RawSettings:   settingsDefault,
+		SavedSettings: &savedSettings,
+		RawSettings:   &rawSettings,
 	}, nil
 }
 
-func (settings *Settings) Save() error {
+func (settings *Settings) WriteToFile() error {
 	data, err := json.Marshal(settings.SavedSettings)
 	if err != nil {
 		return err
 	}
 	return os.WriteFile("settings.json", data, 0644)
+}
+
+func (settings *Settings) Save() {
+	savedSettings := *settings.RawSettings
+	rawSettings := *settings.RawSettings
+	settings.SavedSettings = &savedSettings
+	settings.RawSettings = &rawSettings
 }

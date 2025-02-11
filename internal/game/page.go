@@ -44,6 +44,7 @@ func newMainPage(game *Game, res *ui.UiResources) widget.PreferredSizeLocateable
 		widget.ButtonOpts.Image(res.Button.Image),
 		widget.ButtonOpts.Text("Settings", res.Button.Face, res.Button.Text),
 		widget.ButtonOpts.ClickedHandler(func(args *widget.ButtonClickedEventArgs) {
+			game.settingsUI = createUI("Settings", res, newSettingsPage(game, res), false)
 			game.setStage(SettingsStage)
 		}))
 	container.AddChild(settingsButton)
@@ -209,8 +210,8 @@ func newSettingsPage(game *Game, res *ui.UiResources) widget.PreferredSizeLocate
 		widget.ButtonOpts.Text("Save", res.Button.Face, res.Button.Text),
 		widget.ButtonOpts.ClickedHandler(func(args *widget.ButtonClickedEventArgs) {
 			game.stage = MainMenuStage
-			game.settings.SavedSettings = game.settings.RawSettings
-			if err := game.settings.Save(); err != nil {
+			game.settings.Save()
+			if err := game.settings.WriteToFile(); err != nil {
 				game.logger.Printf("[ERROR] Error saving settings: %v", err)
 				return
 			}
@@ -227,7 +228,7 @@ func newSettingsPage(game *Game, res *ui.UiResources) widget.PreferredSizeLocate
 		widget.ButtonOpts.Text("Back", res.Button.Face, res.Button.Text),
 		widget.ButtonOpts.ClickedHandler(func(args *widget.ButtonClickedEventArgs) {
 			game.stage = MainMenuStage
-			game.settings.RawSettings = game.settings.SavedSettings
+			game.ApplySettings()
 		}))
 	rayLayoutContainer.AddChild(backButton)
 
@@ -256,7 +257,11 @@ func newSettingsPage(game *Game, res *ui.UiResources) widget.PreferredSizeLocate
 		string(settings.Resolution1280x720),
 	}
 
-	cb := ui.NewListComboButton(
+	listResolutionContainer := widget.NewContainer(
+		widget.ContainerOpts.Layout(widget.NewRowLayout(widget.RowLayoutOpts.Spacing(5))),
+	)
+
+	listResolution := ui.NewListComboButton(
 		entries,
 		func(e interface{}) string {
 			return e.(string)
@@ -268,8 +273,99 @@ func newSettingsPage(game *Game, res *ui.UiResources) widget.PreferredSizeLocate
 			game.settings.RawSettings.Resolution = settings.Resolution(args.Entry.(string))
 		},
 		res)
-	cb.SetSelectedEntry(string(game.settings.SavedSettings.Resolution))
-	gridLayoutContainer.AddChild(cb)
+	listResolution.SetSelectedEntry(string(game.settings.SavedSettings.Resolution))
+	listResolutionContainer.AddChild(listResolution)
+	gridLayoutContainer.AddChild(listResolutionContainer)
+
+	sliderMusicVolume := buildSliderMusicVolume(game, res, gridLayoutContainer)
+	gridLayoutContainer.AddChild(sliderMusicVolume)
+
+	sliderEffectsVolume := buildSliderEffectsVolume(game, res, gridLayoutContainer)
+	gridLayoutContainer.AddChild(sliderEffectsVolume)
 
 	return container
+}
+
+func buildSliderMusicVolume(game *Game, res *ui.UiResources, gridLayoutContainer *widget.Container) *widget.Container {
+	gridLayoutContainer.AddChild(widget.NewText(
+		widget.TextOpts.Text("Music Volume", res.Text.Face, res.Text.IdleColor)))
+
+	sliderContainer := widget.NewContainer(
+		widget.ContainerOpts.Layout(widget.NewRowLayout(
+			widget.RowLayoutOpts.Spacing(10))),
+		widget.ContainerOpts.AutoDisableChildren(),
+	)
+
+	var text *widget.Label
+
+	slider := widget.NewSlider(
+		widget.SliderOpts.WidgetOpts(widget.WidgetOpts.LayoutData(widget.RowLayoutData{
+			Position: widget.RowLayoutPositionStart,
+		}), widget.WidgetOpts.MinSize(200, 6)),
+		widget.SliderOpts.MinMax(0, 100),
+		widget.SliderOpts.Images(res.Slider.TrackImage, res.Slider.Handle),
+		widget.SliderOpts.FixedHandleSize(res.Slider.HandleSize),
+		widget.SliderOpts.TrackOffset(5),
+		widget.SliderOpts.PageSizeFunc(func() int {
+			return 10
+		}),
+		widget.SliderOpts.ChangedHandler(func(args *widget.SliderChangedEventArgs) {
+			text.Label = fmt.Sprintf("%d", args.Current)
+			game.settings.RawSettings.MusicVolume = args.Current
+			game.audioPlayer.SetVolume(float64(game.settings.RawSettings.MusicVolume) / 100)
+		}),
+	)
+	slider.Current = game.settings.SavedSettings.MusicVolume
+	sliderContainer.AddChild(slider)
+
+	text = widget.NewLabel(
+		widget.LabelOpts.TextOpts(widget.TextOpts.WidgetOpts(widget.WidgetOpts.LayoutData(widget.RowLayoutData{
+			Position: widget.RowLayoutPositionStart,
+		}))),
+		widget.LabelOpts.Text(fmt.Sprintf("%d", slider.Current), res.Label.Face, res.Label.Text),
+	)
+	sliderContainer.AddChild(text)
+	return sliderContainer
+}
+
+func buildSliderEffectsVolume(game *Game, res *ui.UiResources, gridLayoutContainer *widget.Container) *widget.Container {
+	gridLayoutContainer.AddChild(widget.NewText(
+		widget.TextOpts.Text("Effects Volume", res.Text.Face, res.Text.IdleColor)))
+
+	sliderContainer := widget.NewContainer(
+		widget.ContainerOpts.Layout(widget.NewRowLayout(
+			widget.RowLayoutOpts.Spacing(10))),
+		widget.ContainerOpts.AutoDisableChildren(),
+	)
+
+	var text *widget.Label
+
+	slider := widget.NewSlider(
+		widget.SliderOpts.WidgetOpts(widget.WidgetOpts.LayoutData(widget.RowLayoutData{
+			Position: widget.RowLayoutPositionStart,
+		}), widget.WidgetOpts.MinSize(200, 6)),
+		widget.SliderOpts.MinMax(0, 100),
+		widget.SliderOpts.Images(res.Slider.TrackImage, res.Slider.Handle),
+		widget.SliderOpts.FixedHandleSize(res.Slider.HandleSize),
+		widget.SliderOpts.TrackOffset(5),
+		widget.SliderOpts.PageSizeFunc(func() int {
+			return 10
+		}),
+		widget.SliderOpts.ChangedHandler(func(args *widget.SliderChangedEventArgs) {
+			text.Label = fmt.Sprintf("%d", args.Current)
+			game.settings.RawSettings.EffectsVolume = args.Current
+			game.explosionAnimation.SetVolume(float64(game.settings.RawSettings.EffectsVolume) / 100)
+		}),
+	)
+	slider.Current = game.settings.SavedSettings.EffectsVolume
+	sliderContainer.AddChild(slider)
+
+	text = widget.NewLabel(
+		widget.LabelOpts.TextOpts(widget.TextOpts.WidgetOpts(widget.WidgetOpts.LayoutData(widget.RowLayoutData{
+			Position: widget.RowLayoutPositionStart,
+		}))),
+		widget.LabelOpts.Text(fmt.Sprintf("%d", slider.Current), res.Label.Face, res.Label.Text),
+	)
+	sliderContainer.AddChild(text)
+	return sliderContainer
 }

@@ -49,7 +49,7 @@ type UiResources struct {
 	Checkbox    *checkboxResources
 	comboButton *comboButtonResources
 	list        *listResources
-	slider      *sliderResources
+	Slider      *sliderResources
 	progressBar *progressBarResources
 	panel       *panelResources
 	tabBook     *tabBookResources
@@ -82,8 +82,8 @@ type checkboxResources struct {
 }
 
 type labelResources struct {
-	text *widget.LabelColor
-	face text.Face
+	Text *widget.LabelColor
+	Face text.Face
 }
 
 type comboButtonResources struct {
@@ -106,9 +106,9 @@ type listResources struct {
 }
 
 type sliderResources struct {
-	trackImage *widget.SliderTrackImage
-	handle     *widget.ButtonImage
-	handleSize int
+	TrackImage *widget.SliderTrackImage
+	Handle     *widget.ButtonImage
+	HandleSize int
 }
 
 type progressBarResources struct {
@@ -246,7 +246,7 @@ func NewUIResources() (*UiResources, error) {
 		Checkbox:    checkbox,
 		comboButton: comboButton,
 		list:        list,
-		slider:      slider,
+		Slider:      slider,
 		panel:       panel,
 		tabBook:     tabBook,
 		Header:      header,
@@ -357,12 +357,12 @@ func newCheckboxResources() (*checkboxResources, error) {
 
 func newLabelResources(fonts *Fonts) *labelResources {
 	return &labelResources{
-		text: &widget.LabelColor{
+		Text: &widget.LabelColor{
 			Idle:     hexToColor(labelIdleColor),
 			Disabled: hexToColor(labelDisabledColor),
 		},
 
-		face: fonts.face,
+		Face: fonts.face,
 	}
 }
 
@@ -531,20 +531,20 @@ func newSliderResources() (*sliderResources, error) {
 	}
 
 	return &sliderResources{
-		trackImage: &widget.SliderTrackImage{
+		TrackImage: &widget.SliderTrackImage{
 			Idle:     image.NewNineSlice(idle, [3]int{0, 19, 0}, [3]int{6, 0, 0}),
 			Hover:    image.NewNineSlice(idle, [3]int{0, 19, 0}, [3]int{6, 0, 0}),
 			Disabled: image.NewNineSlice(disabled, [3]int{0, 19, 0}, [3]int{6, 0, 0}),
 		},
 
-		handle: &widget.ButtonImage{
+		Handle: &widget.ButtonImage{
 			Idle:     image.NewNineSliceSimple(handleIdle, 0, 5),
 			Hover:    image.NewNineSliceSimple(handleHover, 0, 5),
 			Pressed:  image.NewNineSliceSimple(handleHover, 0, 5),
 			Disabled: image.NewNineSliceSimple(handleDisabled, 0, 5),
 		},
 
-		handleSize: 6,
+		HandleSize: 6,
 	}, nil
 }
 
