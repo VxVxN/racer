@@ -236,6 +236,8 @@ func (game *Game) Update() error {
 		game.mainMenuUI.Update()
 	case MenuStage:
 		game.menuUI.Update()
+	case SetPlayerRecordStage:
+		game.playerRatingsUI.Update()
 	case SettingsStage:
 		game.settingsUI.Update()
 	}
