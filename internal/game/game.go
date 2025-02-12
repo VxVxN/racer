@@ -213,9 +213,13 @@ func NewGame() (*Game, error) {
 			game.menuUI.footerText.Label = "Song: " + game.audioPlayer.SongName()
 		},
 		stager.StatisticsStage: func() {
+			game.playerRatingsUI = newPlayerRatingsUI(game, res)
+			game.playerRatingsUI.ui, game.playerRatingsUI.footerText = game.createUI("Player ratings", res, game.playerRatingsUI.widget, false)
+
 			game.playerRatingsUI.footerText.Label = "Song: " + game.audioPlayer.SongName()
 		},
 		stager.SetPlayerRecordStage: func() {
+			game.setPlayerRatingUI.text.Label = fmt.Sprintf("Your new record: %d", int(game.player.Points()))
 			game.setPlayerRatingUI.footerText.Label = "Song: " + game.audioPlayer.SongName()
 		},
 		stager.SettingsStage: func() {

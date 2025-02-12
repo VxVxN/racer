@@ -179,6 +179,7 @@ type setPlayerRatingUI struct {
 	widget     widget.PreferredSizeLocateableWidget
 	textInput  *widget.TextInput
 	ui         *ebitenui.UI
+	text       *widget.Text
 	footerText *widget.Text
 }
 
@@ -195,8 +196,9 @@ func newSetPlayerRatingUI(game *Game, res *ui.UiResources) *setPlayerRatingUI {
 			widget.GridLayoutOpts.Spacing(10, 10))))
 	container.AddChild(gridLayoutContainer)
 
-	gridLayoutContainer.AddChild(widget.NewText(
-		widget.TextOpts.Text(fmt.Sprintf("Your new record: %d", int(game.player.Points())), res.Text.TitleFace, res.Text.IdleColor)))
+	text := widget.NewText(
+		widget.TextOpts.Text(fmt.Sprintf("Your new record: %d", int(game.player.Points())), res.Text.TitleFace, res.Text.IdleColor))
+	gridLayoutContainer.AddChild(text)
 
 	tOpts := []widget.TextInputOpt{
 		widget.TextInputOpts.WidgetOpts(widget.WidgetOpts.LayoutData(widget.RowLayoutData{
@@ -227,6 +229,7 @@ func newSetPlayerRatingUI(game *Game, res *ui.UiResources) *setPlayerRatingUI {
 	return &setPlayerRatingUI{
 		widget:    container,
 		textInput: textInput,
+		text:      text,
 	}
 }
 
