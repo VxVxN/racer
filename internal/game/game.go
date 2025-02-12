@@ -35,15 +35,13 @@ const sampleRate = 48000
 
 type Game struct {
 	// UI
-	resourcesUI         *ui.UiResources
-	mainMenuUI          *ebitenui.UI
-	mainMenuButtons     *ui.ButtonControl
-	menuUI              *ebitenui.UI
-	menuButtons         *ui.ButtonControl
-	playerRatingsUI     *ebitenui.UI
-	setPlayerRatingUI   *ebitenui.UI
-	setPlayerRatingPage *setPlayerRatingPage
-	settingsUI          *ebitenui.UI
+	resourcesUI       *ui.UiResources
+	mainMenuUI        *mainUI
+	menuUI            *menuUI
+	setPlayerRatingUI *setPlayerRatingUI
+	playerRatingsUI   *playerRatingsUI
+	settingsUI        *settingsUI
+	changeUIByStage   map[stager.Stage]func()
 
 	windowWidth, windowHeight  float64
 	startPlayerX, startPlayerY float64
@@ -140,6 +138,8 @@ func NewGame() (*Game, error) {
 		ebiten.KeyRight,
 		ebiten.KeyEscape,
 		ebiten.KeyEnter,
+		ebiten.KeyZ,
+		ebiten.KeyX,
 	}
 
 	gameSettings, err := settings.New()
@@ -166,9 +166,6 @@ func NewGame() (*Game, error) {
 		logger:             logger,
 		settings:           gameSettings,
 	}
-	game.stager.SetOnChange(func(oldStage, newStage stager.Stage) {
-		game.logger.Printf("[INFO] Setting stage to %v", newStage)
-	})
 
 	game.explosionAnimation.SetRepeatable(false)
 	game.explosionAnimation.SetScale(0.4, 0.4)
@@ -192,10 +189,46 @@ func NewGame() (*Game, error) {
 	}
 
 	game.resourcesUI = res
-	game.mainMenuUI = createUI("Racer", res, newMainPage(game, res), true)
-	game.menuUI = createUI("Menu", res, newMenuPage(game, res), true)
-	game.playerRatingsUI = createUI("Player ratings", res, newPlayerRatingsPage(game, res), false)
-	game.settingsUI = createUI("Settings", res, newSettingsPage(game, res), false)
+
+	game.mainMenuUI = newMainUI(game, res)
+	game.mainMenuUI.ui, game.mainMenuUI.footerText = game.createUI("Racer", res, game.mainMenuUI.widget, true)
+
+	game.menuUI = newMenuUI(game, res)
+	game.menuUI.ui, game.menuUI.footerText = game.createUI("Menu", res, game.menuUI.widget, true)
+
+	game.playerRatingsUI = newPlayerRatingsUI(game, res)
+	game.playerRatingsUI.ui, game.playerRatingsUI.footerText = game.createUI("Player ratings", res, game.playerRatingsUI.widget, false)
+
+	game.settingsUI = newSettingsUI(game, res)
+	game.settingsUI.ui, game.settingsUI.footerText = game.createUI("Settings", res, game.settingsUI.widget, false)
+
+	game.setPlayerRatingUI = newSetPlayerRatingUI(game, res)
+	game.setPlayerRatingUI.ui, game.setPlayerRatingUI.footerText = game.createUI("New record!", res, game.setPlayerRatingUI.widget, true)
+
+	game.changeUIByStage = map[stager.Stage]func(){
+		stager.MainMenuStage: func() {
+			game.mainMenuUI.footerText.Label = "Song: " + game.audioPlayer.SongName()
+		},
+		stager.MenuStage: func() {
+			game.menuUI.footerText.Label = "Song: " + game.audioPlayer.SongName()
+		},
+		stager.StatisticsStage: func() {
+			game.playerRatingsUI.footerText.Label = "Song: " + game.audioPlayer.SongName()
+		},
+		stager.SetPlayerRecordStage: func() {
+			game.setPlayerRatingUI.footerText.Label = "Song: " + game.audioPlayer.SongName()
+		},
+		stager.SettingsStage: func() {
+			game.settingsUI.footerText.Label = "Song: " + game.audioPlayer.SongName()
+		},
+	}
+
+	game.stager.SetOnChange(func(oldStage, newStage stager.Stage) {
+		game.logger.Printf("[INFO] Setting stage to %v", newStage)
+		if buildUI, ok := game.changeUIByStage[newStage]; ok {
+			buildUI()
+		}
+	})
 
 	game.addEvents()
 
@@ -205,13 +238,13 @@ func NewGame() (*Game, error) {
 func (game *Game) Update() error {
 	switch game.stager.Stage() {
 	case stager.MainMenuStage:
-		game.mainMenuUI.Update()
+		game.mainMenuUI.ui.Update()
 	case stager.MenuStage:
-		game.menuUI.Update()
+		game.menuUI.ui.Update()
 	case stager.SetPlayerRecordStage:
-		game.playerRatingsUI.Update()
+		game.playerRatingsUI.ui.Update()
 	case stager.SettingsStage:
-		game.settingsUI.Update()
+		game.settingsUI.ui.Update()
 	}
 	game.eventManager.Update()
 	//if time.Since(game.globalTime) < time.Second/time.Duration(60) {
@@ -231,16 +264,12 @@ func (game *Game) Update() error {
 	}
 
 	if game.cars.Collision(game.player.Rectangle) {
-		game.audioPlayer.Pause()
 		game.player.SetDead(true)
 		game.logger.Println("[DBG] Collision detected")
 		game.explosionAnimation.SetPosition(game.player.X*2.15, game.player.Y*2.15)
 		game.explosionAnimation.Start()
 		game.explosionAnimation.SetCallback(func() {
-			defer game.audioPlayer.Play()
 			game.stager.SetStage(stager.GameOverStage)
-			game.setPlayerRatingPage = newSetPlayerRatingPage(game, game.resourcesUI)
-			game.setPlayerRatingUI = createUI("New record!", game.resourcesUI, game.setPlayerRatingPage.widget, true)
 			records, err := game.statisticer.Load()
 			if err != nil {
 				log.Fatalf("Failed to load statistics: %v", err)
@@ -292,17 +321,17 @@ func preparePlayerRatings(records []statisticer.Record, playerName string, playe
 func (game *Game) Draw(screen *ebiten.Image) {
 	switch game.stager.Stage() {
 	case stager.MainMenuStage:
-		game.mainMenuUI.Draw(screen)
+		game.mainMenuUI.ui.Draw(screen)
 	case stager.MenuStage:
-		game.menuUI.Draw(screen)
+		game.menuUI.ui.Draw(screen)
 	case stager.StatisticsStage:
-		game.playerRatingsUI.Draw(screen)
+		game.playerRatingsUI.ui.Draw(screen)
 	case stager.SetPlayerRecordStage:
-		game.setPlayerRatingUI.Draw(screen)
+		game.setPlayerRatingUI.ui.Draw(screen)
 	case stager.GameStage, stager.GameOverStage:
 		game.drawGameStage(screen)
 	case stager.SettingsStage:
-		game.settingsUI.Draw(screen)
+		game.settingsUI.ui.Draw(screen)
 	default:
 	}
 }
@@ -344,9 +373,9 @@ func (game *Game) addEvents() {
 	game.eventManager.AddPressedEvent(ebiten.KeyUp, func() {
 		switch game.stager.Stage() {
 		case stager.MainMenuStage:
-			game.mainMenuButtons.Before()
+			game.mainMenuUI.buttons.Before()
 		case stager.MenuStage:
-			game.menuButtons.Before()
+			game.menuUI.buttons.Before()
 		}
 	})
 	game.eventManager.AddPressEvent(ebiten.KeyDown, func() {
@@ -361,9 +390,9 @@ func (game *Game) addEvents() {
 	game.eventManager.AddPressedEvent(ebiten.KeyDown, func() {
 		switch game.stager.Stage() {
 		case stager.MainMenuStage:
-			game.mainMenuButtons.Next()
+			game.mainMenuUI.buttons.Next()
 		case stager.MenuStage:
-			game.menuButtons.Next()
+			game.menuUI.buttons.Next()
 		}
 	})
 	game.eventManager.AddPressedEvent(ebiten.KeyEscape, func() {
@@ -384,17 +413,17 @@ func (game *Game) addEvents() {
 		case stager.GameOverStage:
 			game.Reset()
 		case stager.MainMenuStage:
-			game.mainMenuButtons.Click()
+			game.mainMenuUI.buttons.Click()
 		case stager.MenuStage:
-			game.menuButtons.Click()
+			game.menuUI.buttons.Click()
 		case stager.StatisticsStage:
 			game.stager.SetStage(stager.MainMenuStage)
 		case stager.SetPlayerRecordStage:
-			if game.setPlayerRatingPage.textInput.GetText() == "" {
+			if game.setPlayerRatingUI.textInput.GetText() == "" {
 				break
 			}
-			game.player.SetName(game.setPlayerRatingPage.textInput.GetText())
-			game.setPlayerRatingPage.textInput.SetText("")
+			game.player.SetName(game.setPlayerRatingUI.textInput.GetText())
+			game.setPlayerRatingUI.textInput.SetText("")
 
 			records, err := game.statisticer.Load()
 			if err != nil {
@@ -404,8 +433,19 @@ func (game *Game) addEvents() {
 			if err := game.statisticer.Save(resultRecords); err != nil {
 				log.Fatalf("Failed to save results: %v", err)
 			}
-			game.playerRatingsUI = createUI("Player ratings", game.resourcesUI, newPlayerRatingsPage(game, game.resourcesUI), false)
 			game.stager.SetStage(stager.StatisticsStage)
+		}
+	})
+	game.eventManager.AddPressedEvent(ebiten.KeyZ, func() {
+		game.audioPlayer.Before()
+		if buildUI, ok := game.changeUIByStage[game.stager.Stage()]; ok {
+			buildUI()
+		}
+	})
+	game.eventManager.AddPressedEvent(ebiten.KeyX, func() {
+		game.audioPlayer.Next()
+		if buildUI, ok := game.changeUIByStage[game.stager.Stage()]; ok {
+			buildUI()
 		}
 	})
 }
@@ -474,7 +514,7 @@ func (game *Game) Reset() {
 	game.explosionAnimation.Reset()
 }
 
-func createUI(title string, res *ui.UiResources, page widget.PreferredSizeLocateableWidget, center bool) *ebitenui.UI {
+func (game *Game) createUI(title string, res *ui.UiResources, page widget.PreferredSizeLocateableWidget, center bool) (*ebitenui.UI, *widget.Text) {
 	rootContainer := widget.NewContainer(
 		widget.ContainerOpts.WidgetOpts(widget.WidgetOpts.TrackHover(false)),
 		widget.ContainerOpts.Layout(widget.NewGridLayout(
@@ -491,9 +531,12 @@ func createUI(title string, res *ui.UiResources, page widget.PreferredSizeLocate
 
 	rootContainer.AddChild(page)
 
+	footerText := widget.NewText(widget.TextOpts.Text("Song: "+game.audioPlayer.SongName(), res.Text.SmallFace, res.Text.IdleColor))
+	rootContainer.AddChild(footerText)
+
 	return &ebitenui.UI{
 		Container: rootContainer,
-	}
+	}, footerText
 }
 
 func (game *Game) ApplySettings() {

@@ -6,13 +6,22 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/ebitenui/ebitenui"
+	"github.com/ebitenui/ebitenui/widget"
+
 	"github.com/VxVxN/game/internal/settings"
 	"github.com/VxVxN/game/internal/stager"
 	"github.com/VxVxN/game/internal/ui"
-	"github.com/ebitenui/ebitenui/widget"
 )
 
-func newMainPage(game *Game, res *ui.UiResources) widget.PreferredSizeLocateableWidget {
+type mainUI struct {
+	widget     widget.PreferredSizeLocateableWidget
+	ui         *ebitenui.UI
+	buttons    *ui.ButtonControl
+	footerText *widget.Text
+}
+
+func newMainUI(game *Game, res *ui.UiResources) *mainUI {
 	container := ui.NewPageContentContainer()
 
 	buttonOpts := widget.ButtonOpts.WidgetOpts(widget.WidgetOpts.LayoutData(widget.RowLayoutData{
@@ -45,7 +54,6 @@ func newMainPage(game *Game, res *ui.UiResources) widget.PreferredSizeLocateable
 		widget.ButtonOpts.Image(res.Button.Image),
 		widget.ButtonOpts.Text("Settings", res.Button.Face, res.Button.Text),
 		widget.ButtonOpts.ClickedHandler(func(args *widget.ButtonClickedEventArgs) {
-			game.settingsUI = createUI("Settings", res, newSettingsPage(game, res), false)
 			game.stager.SetStage(stager.SettingsStage)
 		}))
 	container.AddChild(settingsButton)
@@ -59,12 +67,20 @@ func newMainPage(game *Game, res *ui.UiResources) widget.PreferredSizeLocateable
 		}))
 	container.AddChild(exitButton)
 
-	game.mainMenuButtons = ui.NewButtonControl([]*widget.Button{newGameButton, playerRatingsButton, settingsButton, exitButton})
-
-	return container
+	return &mainUI{
+		widget:  container,
+		buttons: ui.NewButtonControl([]*widget.Button{newGameButton, playerRatingsButton, settingsButton, exitButton}),
+	}
 }
 
-func newMenuPage(game *Game, res *ui.UiResources) widget.PreferredSizeLocateableWidget {
+type menuUI struct {
+	widget     widget.PreferredSizeLocateableWidget
+	ui         *ebitenui.UI
+	buttons    *ui.ButtonControl
+	footerText *widget.Text
+}
+
+func newMenuUI(game *Game, res *ui.UiResources) *menuUI {
 	container := ui.NewPageContentContainer()
 
 	buttonOpts := widget.ButtonOpts.WidgetOpts(widget.WidgetOpts.LayoutData(widget.RowLayoutData{
@@ -97,7 +113,6 @@ func newMenuPage(game *Game, res *ui.UiResources) widget.PreferredSizeLocateable
 		widget.ButtonOpts.Image(res.Button.Image),
 		widget.ButtonOpts.Text("Settings", res.Button.Face, res.Button.Text),
 		widget.ButtonOpts.ClickedHandler(func(args *widget.ButtonClickedEventArgs) {
-			game.settingsUI = createUI("Settings", res, newSettingsPage(game, res), false)
 			game.stager.SetStage(stager.SettingsStage)
 		}))
 	container.AddChild(settingsButton)
@@ -111,12 +126,19 @@ func newMenuPage(game *Game, res *ui.UiResources) widget.PreferredSizeLocateable
 		}))
 	container.AddChild(exitButton)
 
-	game.menuButtons = ui.NewButtonControl([]*widget.Button{continueGameButton, backToMainMenuButton, settingsButton, exitButton})
-
-	return container
+	return &menuUI{
+		widget:  container,
+		buttons: ui.NewButtonControl([]*widget.Button{continueGameButton, backToMainMenuButton, settingsButton, exitButton}),
+	}
 }
 
-func newPlayerRatingsPage(game *Game, res *ui.UiResources) widget.PreferredSizeLocateableWidget {
+type playerRatingsUI struct {
+	widget     widget.PreferredSizeLocateableWidget
+	ui         *ebitenui.UI
+	footerText *widget.Text
+}
+
+func newPlayerRatingsUI(game *Game, res *ui.UiResources) *playerRatingsUI {
 	container := ui.NewPageContentContainer()
 
 	records, err := game.statisticer.Load()
@@ -148,15 +170,19 @@ func newPlayerRatingsPage(game *Game, res *ui.UiResources) widget.PreferredSizeL
 			widget.TextOpts.Text(strconv.Itoa(record.Points), res.Text.Face, res.Text.IdleColor)))
 	}
 
-	return container
+	return &playerRatingsUI{
+		widget: container,
+	}
 }
 
-type setPlayerRatingPage struct {
-	widget    widget.PreferredSizeLocateableWidget
-	textInput *widget.TextInput
+type setPlayerRatingUI struct {
+	widget     widget.PreferredSizeLocateableWidget
+	textInput  *widget.TextInput
+	ui         *ebitenui.UI
+	footerText *widget.Text
 }
 
-func newSetPlayerRatingPage(game *Game, res *ui.UiResources) *setPlayerRatingPage {
+func newSetPlayerRatingUI(game *Game, res *ui.UiResources) *setPlayerRatingUI {
 	container := ui.NewPageContentContainer()
 
 	gridLayoutContainer := widget.NewContainer(
@@ -198,13 +224,19 @@ func newSetPlayerRatingPage(game *Game, res *ui.UiResources) *setPlayerRatingPag
 	textInput.Focus(true)
 	gridLayoutContainer.AddChild(textInput)
 
-	return &setPlayerRatingPage{
+	return &setPlayerRatingUI{
 		widget:    container,
 		textInput: textInput,
 	}
 }
 
-func newSettingsPage(game *Game, res *ui.UiResources) widget.PreferredSizeLocateableWidget {
+type settingsUI struct {
+	widget     widget.PreferredSizeLocateableWidget
+	ui         *ebitenui.UI
+	footerText *widget.Text
+}
+
+func newSettingsUI(game *Game, res *ui.UiResources) *settingsUI {
 	container := ui.NewPageContentContainer()
 
 	rayLayoutContainer := widget.NewContainer(
@@ -294,7 +326,16 @@ func newSettingsPage(game *Game, res *ui.UiResources) widget.PreferredSizeLocate
 	sliderEffectsVolume := buildSliderEffectsVolume(game, res, gridLayoutContainer)
 	gridLayoutContainer.AddChild(sliderEffectsVolume)
 
-	return container
+	container.AddChild(ui.NewSeparator(res, widget.RowLayoutData{
+		Stretch: true,
+	}))
+
+	container.AddChild(widget.NewText(
+		widget.TextOpts.Text("Press Z to switch to the previous song\nPress X to switch to the next song", res.Text.Face, res.Text.IdleColor)))
+
+	return &settingsUI{
+		widget: container,
+	}
 }
 
 func buildSliderMusicVolume(game *Game, res *ui.UiResources, gridLayoutContainer *widget.Container) *widget.Container {
