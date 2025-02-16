@@ -237,6 +237,7 @@ type settingsUI struct {
 	widget     widget.PreferredSizeLocateableWidget
 	ui         *ebitenui.UI
 	footerText *widget.Text
+	buttons    *ui.ButtonControl
 }
 
 func newSettingsUI(game *Game, res *ui.UiResources) *settingsUI {
@@ -337,7 +338,8 @@ func newSettingsUI(game *Game, res *ui.UiResources) *settingsUI {
 		widget.TextOpts.Text("Press Z to switch to the previous song\nPress X to switch to the next song", res.Text.Face, res.Text.IdleColor)))
 
 	return &settingsUI{
-		widget: container,
+		widget:  container,
+		buttons: ui.NewButtonControl([]*widget.Button{saveButton, backButton}),
 	}
 }
 

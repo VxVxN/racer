@@ -351,8 +351,12 @@ func (game *Game) addEvents() {
 			if !game.player.Dead() && game.player.X < game.windowWidth/2+370 {
 				game.player.Move(ebiten.KeyRight)
 			}
-		case stager.GameOverStage:
-		case stager.MainMenuStage:
+		}
+	})
+	game.eventManager.AddPressedEvent(ebiten.KeyRight, func() {
+		switch game.stager.Stage() {
+		case stager.SettingsStage:
+			game.settingsUI.buttons.Next()
 		}
 	})
 	game.eventManager.AddPressEvent(ebiten.KeyLeft, func() {
@@ -361,8 +365,12 @@ func (game *Game) addEvents() {
 			if !game.player.Dead() && game.player.X > game.windowWidth/2-480 {
 				game.player.Move(ebiten.KeyLeft)
 			}
-		case stager.GameOverStage:
-		case stager.MainMenuStage:
+		}
+	})
+	game.eventManager.AddPressedEvent(ebiten.KeyLeft, func() {
+		switch game.stager.Stage() {
+		case stager.SettingsStage:
+			game.settingsUI.buttons.Before()
 		}
 	})
 	game.eventManager.AddPressEvent(ebiten.KeyUp, func() {
@@ -420,6 +428,8 @@ func (game *Game) addEvents() {
 			game.mainMenuUI.buttons.Click()
 		case stager.MenuStage:
 			game.menuUI.buttons.Click()
+		case stager.SettingsStage:
+			game.settingsUI.buttons.Click()
 		case stager.StatisticsStage:
 			game.stager.SetStage(stager.MainMenuStage)
 		case stager.SetPlayerRecordStage:
