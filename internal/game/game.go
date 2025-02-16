@@ -223,6 +223,9 @@ func NewGame() (*Game, error) {
 			game.setPlayerRatingUI.footerText.Label = "Song: " + game.audioPlayer.SongName()
 		},
 		stager.SettingsStage: func() {
+			game.settingsUI = newSettingsUI(game, res)
+			game.settingsUI.ui, game.settingsUI.footerText = game.createUI("Settings", res, game.settingsUI.widget, false)
+
 			game.settingsUI.footerText.Label = "Song: " + game.audioPlayer.SongName()
 		},
 	}
