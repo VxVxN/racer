@@ -234,10 +234,13 @@ func newSetPlayerRatingUI(game *Game, res *ui.UiResources) *setPlayerRatingUI {
 }
 
 type settingsUI struct {
-	widget     widget.PreferredSizeLocateableWidget
-	ui         *ebitenui.UI
-	footerText *widget.Text
-	buttons    *ui.ButtonControl
+	widget              widget.PreferredSizeLocateableWidget
+	ui                  *ebitenui.UI
+	footerText          *widget.Text
+	buttons             *ui.ButtonControl
+	sliderMusicVolume   *widget.Slider
+	sliderEffectsVolume *widget.Slider
+	listResolution      *widget.ListComboButton
 }
 
 func newSettingsUI(game *Game, res *ui.UiResources) *settingsUI {
@@ -324,11 +327,11 @@ func newSettingsUI(game *Game, res *ui.UiResources) *settingsUI {
 	listResolutionContainer.AddChild(listResolution)
 	gridLayoutContainer.AddChild(listResolutionContainer)
 
-	sliderMusicVolume := buildSliderMusicVolume(game, res, gridLayoutContainer)
-	gridLayoutContainer.AddChild(sliderMusicVolume)
+	sliderMusicVolumeContainer, sliderMusicVolume := buildSliderMusicVolume(game, res, gridLayoutContainer)
+	gridLayoutContainer.AddChild(sliderMusicVolumeContainer)
 
-	sliderEffectsVolume := buildSliderEffectsVolume(game, res, gridLayoutContainer)
-	gridLayoutContainer.AddChild(sliderEffectsVolume)
+	sliderEffectsVolumeContainer, sliderEffectsVolume := buildSliderEffectsVolume(game, res, gridLayoutContainer)
+	gridLayoutContainer.AddChild(sliderEffectsVolumeContainer)
 
 	container.AddChild(ui.NewSeparator(res, widget.RowLayoutData{
 		Stretch: true,
@@ -338,12 +341,15 @@ func newSettingsUI(game *Game, res *ui.UiResources) *settingsUI {
 		widget.TextOpts.Text("Press Z to switch to the previous song\nPress X to switch to the next song", res.Text.Face, res.Text.IdleColor)))
 
 	return &settingsUI{
-		widget:  container,
-		buttons: ui.NewButtonControl([]*widget.Button{saveButton, backButton}),
+		widget:              container,
+		buttons:             ui.NewButtonControl([]*widget.Button{saveButton, backButton}),
+		sliderMusicVolume:   sliderMusicVolume,
+		sliderEffectsVolume: sliderEffectsVolume,
+		listResolution:      listResolution,
 	}
 }
 
-func buildSliderMusicVolume(game *Game, res *ui.UiResources, gridLayoutContainer *widget.Container) *widget.Container {
+func buildSliderMusicVolume(game *Game, res *ui.UiResources, gridLayoutContainer *widget.Container) (*widget.Container, *widget.Slider) {
 	gridLayoutContainer.AddChild(widget.NewText(
 		widget.TextOpts.Text("Music Volume", res.Text.Face, res.Text.IdleColor)))
 
@@ -382,10 +388,10 @@ func buildSliderMusicVolume(game *Game, res *ui.UiResources, gridLayoutContainer
 		widget.LabelOpts.Text(fmt.Sprintf("%d", slider.Current), res.Label.Face, res.Label.Text),
 	)
 	sliderContainer.AddChild(text)
-	return sliderContainer
+	return sliderContainer, slider
 }
 
-func buildSliderEffectsVolume(game *Game, res *ui.UiResources, gridLayoutContainer *widget.Container) *widget.Container {
+func buildSliderEffectsVolume(game *Game, res *ui.UiResources, gridLayoutContainer *widget.Container) (*widget.Container, *widget.Slider) {
 	gridLayoutContainer.AddChild(widget.NewText(
 		widget.TextOpts.Text("Effects Volume", res.Text.Face, res.Text.IdleColor)))
 
@@ -424,5 +430,5 @@ func buildSliderEffectsVolume(game *Game, res *ui.UiResources, gridLayoutContain
 		widget.LabelOpts.Text(fmt.Sprintf("%d", slider.Current), res.Label.Face, res.Label.Text),
 	)
 	sliderContainer.AddChild(text)
-	return sliderContainer
+	return sliderContainer, slider
 }
