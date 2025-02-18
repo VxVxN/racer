@@ -37,3 +37,7 @@ func (bc *ButtonControl) Before() {
 func (bc *ButtonControl) Click() {
 	bc.buttons[bc.currentButtonIndex].Click()
 }
+
+func (bc *ButtonControl) Pressed() {
+	bc.buttons[bc.currentButtonIndex].PressedEvent.Fire(&widget.ButtonPressedEventArgs{Button: bc.buttons[bc.currentButtonIndex]})
+}

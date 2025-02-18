@@ -428,11 +428,11 @@ func (game *Game) addEvents() {
 		case stager.GameOverStage:
 			game.Reset()
 		case stager.MainMenuStage:
-			game.mainMenuUI.buttons.Click()
+			game.mainMenuUI.buttons.Pressed()
 		case stager.MenuStage:
-			game.menuUI.buttons.Click()
+			game.menuUI.buttons.Pressed()
 		case stager.SettingsStage:
-			game.settingsUI.buttons.Click()
+			game.settingsUI.buttons.Pressed()
 		case stager.StatisticsStage:
 			game.stager.SetStage(stager.MainMenuStage)
 		case stager.SetPlayerRecordStage:
