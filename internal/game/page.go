@@ -245,13 +245,14 @@ func newSetPlayerRatingUI(game *Game, res *ui.UiResources) *setPlayerRatingUI {
 }
 
 type settingsUI struct {
-	widget              widget.PreferredSizeLocateableWidget
-	ui                  *ebitenui.UI
-	footerText          *widget.Text
-	buttons             *ui.ButtonControl
-	sliderMusicVolume   *widget.Slider
-	sliderEffectsVolume *widget.Slider
-	listResolution      *widget.ListComboButton
+	widget               widget.PreferredSizeLocateableWidget
+	ui                   *ebitenui.UI
+	footerText           *widget.Text
+	buttons              *ui.ButtonControl
+	sliderMusicVolume    *widget.Slider
+	sliderEffectsVolume  *widget.Slider
+	sliderCarSensitivity *widget.Slider
+	listResolution       *widget.ListComboButton
 }
 
 func newSettingsUI(game *Game, res *ui.UiResources) *settingsUI {
@@ -344,6 +345,9 @@ func newSettingsUI(game *Game, res *ui.UiResources) *settingsUI {
 	sliderEffectsVolumeContainer, sliderEffectsVolume := buildSliderEffectsVolume(game, res, gridLayoutContainer)
 	gridLayoutContainer.AddChild(sliderEffectsVolumeContainer)
 
+	SliderCarSensitivityContainer, sliderCarSensitivity := buildSliderCarSensitivity(game, res, gridLayoutContainer)
+	gridLayoutContainer.AddChild(SliderCarSensitivityContainer)
+
 	container.AddChild(ui.NewSeparator(res, widget.RowLayoutData{
 		Stretch: true,
 	}))
@@ -352,11 +356,12 @@ func newSettingsUI(game *Game, res *ui.UiResources) *settingsUI {
 		widget.TextOpts.Text("Press Z to switch to the previous song\nPress X to switch to the next song", res.Text.Face, res.Text.IdleColor)))
 
 	return &settingsUI{
-		widget:              container,
-		buttons:             ui.NewButtonControl([]*widget.Button{saveButton, backButton}),
-		sliderMusicVolume:   sliderMusicVolume,
-		sliderEffectsVolume: sliderEffectsVolume,
-		listResolution:      listResolution,
+		widget:               container,
+		buttons:              ui.NewButtonControl([]*widget.Button{saveButton, backButton}),
+		sliderMusicVolume:    sliderMusicVolume,
+		sliderEffectsVolume:  sliderEffectsVolume,
+		sliderCarSensitivity: sliderCarSensitivity,
+		listResolution:       listResolution,
 	}
 }
 
@@ -432,6 +437,48 @@ func buildSliderEffectsVolume(game *Game, res *ui.UiResources, gridLayoutContain
 		}),
 	)
 	slider.Current = game.settings.SavedSettings.EffectsVolume
+	sliderContainer.AddChild(slider)
+
+	text = widget.NewLabel(
+		widget.LabelOpts.TextOpts(widget.TextOpts.WidgetOpts(widget.WidgetOpts.LayoutData(widget.RowLayoutData{
+			Position: widget.RowLayoutPositionStart,
+		}))),
+		widget.LabelOpts.Text(fmt.Sprintf("%d", slider.Current), res.Label.Face, res.Label.Text),
+	)
+	sliderContainer.AddChild(text)
+	return sliderContainer, slider
+}
+
+func buildSliderCarSensitivity(game *Game, res *ui.UiResources, gridLayoutContainer *widget.Container) (*widget.Container, *widget.Slider) {
+	gridLayoutContainer.AddChild(widget.NewText(
+		widget.TextOpts.Text("Sensitivity of the car", res.Text.Face, res.Text.IdleColor)))
+
+	sliderContainer := widget.NewContainer(
+		widget.ContainerOpts.Layout(widget.NewRowLayout(
+			widget.RowLayoutOpts.Spacing(10))),
+		widget.ContainerOpts.AutoDisableChildren(),
+	)
+
+	var text *widget.Label
+
+	slider := widget.NewSlider(
+		widget.SliderOpts.WidgetOpts(widget.WidgetOpts.LayoutData(widget.RowLayoutData{
+			Position: widget.RowLayoutPositionStart,
+		}), widget.WidgetOpts.MinSize(200, 6)),
+		widget.SliderOpts.MinMax(50, 100),
+		widget.SliderOpts.Images(res.Slider.TrackImage, res.Slider.Handle),
+		widget.SliderOpts.FixedHandleSize(res.Slider.HandleSize),
+		widget.SliderOpts.TrackOffset(5),
+		widget.SliderOpts.PageSizeFunc(func() int {
+			return 1
+		}),
+		widget.SliderOpts.ChangedHandler(func(args *widget.SliderChangedEventArgs) {
+			text.Label = fmt.Sprintf("%d", args.Current)
+			game.settings.RawSettings.CarSensitivity = float64(args.Current) / 10
+			game.player.SetSpeed(game.settings.RawSettings.CarSensitivity)
+		}),
+	)
+	slider.Current = int(game.settings.SavedSettings.CarSensitivity * 10)
 	sliderContainer.AddChild(slider)
 
 	text = widget.NewLabel(

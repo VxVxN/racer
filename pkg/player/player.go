@@ -1,9 +1,10 @@
 package player
 
 import (
+	"github.com/hajimehoshi/ebiten/v2"
+
 	"github.com/VxVxN/game/internal/shadow"
 	"github.com/VxVxN/game/pkg/rectangle"
-	"github.com/hajimehoshi/ebiten/v2"
 )
 
 type Player struct {
@@ -16,9 +17,9 @@ type Player struct {
 	dead   bool
 }
 
-func NewPlayer(image *ebiten.Image, shadow *shadow.Shadow) *Player {
+func NewPlayer(image *ebiten.Image, shadow *shadow.Shadow, speed float64) *Player {
 	return &Player{
-		speed:     10,
+		speed:     speed,
 		Rectangle: rectangle.New(0, 0, float64(image.Bounds().Dx()), float64(image.Bounds().Dy())),
 		image:     image,
 		shadow:    shadow,
@@ -83,4 +84,8 @@ func (player *Player) Dead() bool {
 
 func (player *Player) SetSunDirection(sunDirection shadow.DirectionShadow) {
 	player.shadow.SetDirection(sunDirection)
+}
+
+func (player *Player) SetSpeed(speed float64) {
+	player.speed = speed
 }

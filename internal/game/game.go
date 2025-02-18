@@ -162,7 +162,7 @@ func NewGame() (*Game, error) {
 		triangleImage:      ebiten.NewImage(int(width), int(height)),
 		explosionAnimation: animation.NewAnimation(explosionSet, 0, 0, 910, 900, 6),
 		cars:               cargenerator.New([]*ebiten.Image{greenCar, orangeCar, redCar, grayCar}, []*ebiten.Image{redTruck, greenTruck}, []*ebiten.Image{blueLongTruck, greenLongTruck}, height, startRoad, carShadow, truckShadow, longTruckShadow),
-		player:             playerpkg.NewPlayer(playerCar, playerShadow),
+		player:             playerpkg.NewPlayer(playerCar, playerShadow, gameSettings.SavedSettings.CarSensitivity),
 		logger:             logger,
 		settings:           gameSettings,
 	}
@@ -225,6 +225,7 @@ func NewGame() (*Game, error) {
 		stager.SettingsStage: func() {
 			game.settingsUI.sliderMusicVolume.Current = game.settings.SavedSettings.MusicVolume
 			game.settingsUI.sliderEffectsVolume.Current = game.settings.SavedSettings.EffectsVolume
+			game.settingsUI.sliderCarSensitivity.Current = int(game.settings.SavedSettings.CarSensitivity * 10)
 			game.settingsUI.listResolution.SetSelectedEntry(string(game.settings.SavedSettings.Resolution))
 			game.settingsUI.footerText.Label = "Song: " + game.audioPlayer.SongName()
 		},

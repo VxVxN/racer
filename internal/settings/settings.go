@@ -14,9 +14,10 @@ type Settings struct {
 }
 
 type settingValues struct {
-	Resolution    Resolution
-	MusicVolume   int
-	EffectsVolume int
+	Resolution     Resolution
+	MusicVolume    int
+	EffectsVolume  int
+	CarSensitivity float64
 }
 
 type Resolution string
@@ -47,9 +48,10 @@ func (resolution *Resolution) Size() (int, int) {
 
 func New() (*Settings, error) {
 	settings := settingValues{
-		Resolution:    ResolutionFullScreen,
-		MusicVolume:   100,
-		EffectsVolume: 100,
+		Resolution:     ResolutionFullScreen,
+		MusicVolume:    100,
+		EffectsVolume:  100,
+		CarSensitivity: 10,
 	}
 	data, err := os.ReadFile("settings.json")
 	if err == nil {
