@@ -35,7 +35,7 @@ func newMainUI(game *Game, res *ui.UiResources) *mainUI {
 		widget.ButtonOpts.Image(res.Button.Image),
 		widget.ButtonOpts.Text("New game", res.Button.Face, res.Button.Text),
 		widget.ButtonOpts.TextPadding(res.Button.Padding),
-		widget.ButtonOpts.ClickedHandler(func(args *widget.ButtonClickedEventArgs) {
+		widget.ButtonOpts.PressedHandler(func(args *widget.ButtonPressedEventArgs) {
 			game.Reset()
 		}))
 	container.AddChild(newGameButton)
@@ -44,7 +44,7 @@ func newMainUI(game *Game, res *ui.UiResources) *mainUI {
 		buttonOpts,
 		widget.ButtonOpts.Image(res.Button.Image),
 		widget.ButtonOpts.Text("Player ratings", res.Button.Face, res.Button.Text),
-		widget.ButtonOpts.ClickedHandler(func(args *widget.ButtonClickedEventArgs) {
+		widget.ButtonOpts.PressedHandler(func(args *widget.ButtonPressedEventArgs) {
 			game.stager.SetStage(stager.StatisticsStage)
 		}))
 	container.AddChild(playerRatingsButton)
@@ -53,7 +53,7 @@ func newMainUI(game *Game, res *ui.UiResources) *mainUI {
 		buttonOpts,
 		widget.ButtonOpts.Image(res.Button.Image),
 		widget.ButtonOpts.Text("Settings", res.Button.Face, res.Button.Text),
-		widget.ButtonOpts.ClickedHandler(func(args *widget.ButtonClickedEventArgs) {
+		widget.ButtonOpts.PressedHandler(func(args *widget.ButtonPressedEventArgs) {
 			game.stager.SetStage(stager.SettingsStage)
 		}))
 	container.AddChild(settingsButton)
@@ -62,7 +62,7 @@ func newMainUI(game *Game, res *ui.UiResources) *mainUI {
 		buttonOpts,
 		widget.ButtonOpts.Image(res.Button.Image),
 		widget.ButtonOpts.Text("Exit", res.Button.Face, res.Button.Text),
-		widget.ButtonOpts.ClickedHandler(func(args *widget.ButtonClickedEventArgs) {
+		widget.ButtonOpts.PressedHandler(func(args *widget.ButtonPressedEventArgs) {
 			os.Exit(0)
 		}))
 	container.AddChild(exitButton)
@@ -94,7 +94,7 @@ func newMenuUI(game *Game, res *ui.UiResources) *menuUI {
 		widget.ButtonOpts.Image(res.Button.Image),
 		widget.ButtonOpts.Text("Continue game", res.Button.Face, res.Button.Text),
 		widget.ButtonOpts.TextPadding(res.Button.Padding),
-		widget.ButtonOpts.ClickedHandler(func(args *widget.ButtonClickedEventArgs) {
+		widget.ButtonOpts.PressedHandler(func(args *widget.ButtonPressedEventArgs) {
 			game.stager.SetStage(stager.GameStage)
 		}))
 	container.AddChild(continueGameButton)
@@ -103,7 +103,7 @@ func newMenuUI(game *Game, res *ui.UiResources) *menuUI {
 		buttonOpts,
 		widget.ButtonOpts.Image(res.Button.Image),
 		widget.ButtonOpts.Text("Go back to the main menu", res.Button.Face, res.Button.Text),
-		widget.ButtonOpts.ClickedHandler(func(args *widget.ButtonClickedEventArgs) {
+		widget.ButtonOpts.PressedHandler(func(args *widget.ButtonPressedEventArgs) {
 			game.stager.SetStage(stager.MainMenuStage)
 		}))
 	container.AddChild(backToMainMenuButton)
@@ -112,7 +112,7 @@ func newMenuUI(game *Game, res *ui.UiResources) *menuUI {
 		buttonOpts,
 		widget.ButtonOpts.Image(res.Button.Image),
 		widget.ButtonOpts.Text("Settings", res.Button.Face, res.Button.Text),
-		widget.ButtonOpts.ClickedHandler(func(args *widget.ButtonClickedEventArgs) {
+		widget.ButtonOpts.PressedHandler(func(args *widget.ButtonPressedEventArgs) {
 			game.stager.SetStage(stager.SettingsStage)
 		}))
 	container.AddChild(settingsButton)
@@ -121,7 +121,7 @@ func newMenuUI(game *Game, res *ui.UiResources) *menuUI {
 		buttonOpts,
 		widget.ButtonOpts.Image(res.Button.Image),
 		widget.ButtonOpts.Text("Exit", res.Button.Face, res.Button.Text),
-		widget.ButtonOpts.ClickedHandler(func(args *widget.ButtonClickedEventArgs) {
+		widget.ButtonOpts.PressedHandler(func(args *widget.ButtonPressedEventArgs) {
 			os.Exit(0)
 		}))
 	container.AddChild(exitButton)
@@ -269,7 +269,7 @@ func newSettingsUI(game *Game, res *ui.UiResources) *settingsUI {
 		}),
 		widget.ButtonOpts.Image(res.Button.Image),
 		widget.ButtonOpts.Text("Save", res.Button.Face, res.Button.Text),
-		widget.ButtonOpts.ClickedHandler(func(args *widget.ButtonClickedEventArgs) {
+		widget.ButtonOpts.PressedHandler(func(args *widget.ButtonPressedEventArgs) {
 			game.stager.RecoveryLastStage()
 			game.settings.Save()
 			if err := game.settings.WriteToFile(); err != nil {
@@ -287,7 +287,7 @@ func newSettingsUI(game *Game, res *ui.UiResources) *settingsUI {
 		}),
 		widget.ButtonOpts.Image(res.Button.Image),
 		widget.ButtonOpts.Text("Back", res.Button.Face, res.Button.Text),
-		widget.ButtonOpts.ClickedHandler(func(args *widget.ButtonClickedEventArgs) {
+		widget.ButtonOpts.PressedHandler(func(args *widget.ButtonPressedEventArgs) {
 			game.stager.RecoveryLastStage()
 			game.ApplySettings()
 		}))
