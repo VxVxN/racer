@@ -61,7 +61,7 @@ type UiResources struct {
 
 type textResources struct {
 	IdleColor     color.Color
-	disabledColor color.Color
+	DisabledColor color.Color
 	Face          text.Face
 	TitleFace     text.Face
 	BigTitleFace  text.Face
@@ -234,7 +234,7 @@ func NewUIResources() (*UiResources, error) {
 
 		Text: &textResources{
 			IdleColor:     hexToColor(textIdleColor),
-			disabledColor: hexToColor(textDisabledColor),
+			DisabledColor: hexToColor(textDisabledColor),
 			Face:          fonts.face,
 			TitleFace:     fonts.titleFace,
 			BigTitleFace:  fonts.bigTitleFace,

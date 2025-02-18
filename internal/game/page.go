@@ -170,6 +170,17 @@ func newPlayerRatingsUI(game *Game, res *ui.UiResources) *playerRatingsUI {
 			widget.TextOpts.Text(strconv.Itoa(record.Points), res.Text.Face, res.Text.IdleColor)))
 	}
 
+	textContainer := widget.NewContainer(
+		widget.ContainerOpts.Layout(widget.NewRowLayout(
+			widget.RowLayoutOpts.Padding(widget.NewInsetsSimple(100)))),
+	)
+
+	text := widget.NewText(
+		widget.TextOpts.Text("Press Enter to exit", res.Text.Face, res.Text.DisabledColor))
+	textContainer.AddChild(text)
+
+	gridLayoutContainer.AddChild(textContainer)
+
 	return &playerRatingsUI{
 		widget: container,
 	}
