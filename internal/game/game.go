@@ -549,7 +549,9 @@ func (game *Game) createUI(title string, res *ui.UiResources, page widget.Prefer
 
 	rootContainer.AddChild(page)
 
-	footerText := widget.NewText(widget.TextOpts.Text("Song: "+game.audioPlayer.SongName(), res.Text.SmallFace, res.Text.IdleColor))
+	footerText := widget.NewText(
+		widget.TextOpts.Insets(widget.NewInsetsSimple(20)),
+		widget.TextOpts.Text("Song: "+game.audioPlayer.SongName(), res.Text.SmallFace, res.Text.IdleColor))
 	rootContainer.AddChild(footerText)
 
 	return &ebitenui.UI{

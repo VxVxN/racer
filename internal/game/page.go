@@ -260,6 +260,7 @@ func newSettingsUI(game *Game, res *ui.UiResources) *settingsUI {
 
 	rayLayoutContainer := widget.NewContainer(
 		widget.ContainerOpts.Layout(widget.NewRowLayout(
+			widget.RowLayoutOpts.Padding(widget.NewInsetsSimple(20)),
 			widget.RowLayoutOpts.Spacing(5))))
 	container.AddChild(rayLayoutContainer)
 
@@ -304,6 +305,7 @@ func newSettingsUI(game *Game, res *ui.UiResources) *settingsUI {
 		})),
 		widget.ContainerOpts.Layout(widget.NewGridLayout(
 			widget.GridLayoutOpts.Columns(2),
+			widget.GridLayoutOpts.Padding(widget.NewInsetsSimple(20)),
 			//widget.GridLayoutOpts.Stretch([]bool{true, true, true, true}, nil),
 			widget.GridLayoutOpts.Spacing(10, 10))))
 	container.AddChild(gridLayoutContainer)
@@ -353,6 +355,7 @@ func newSettingsUI(game *Game, res *ui.UiResources) *settingsUI {
 	}))
 
 	container.AddChild(widget.NewText(
+		widget.TextOpts.Insets(widget.NewInsetsSimple(20)),
 		widget.TextOpts.Text("Press Z to switch to the previous song\nPress X to switch to the next song", res.Text.Face, res.Text.IdleColor)))
 
 	return &settingsUI{
