@@ -8,6 +8,8 @@ import (
 	"log"
 	"sort"
 
+	"github.com/VxVxN/gamedevlib/animation"
+	"github.com/VxVxN/gamedevlib/audioplayer"
 	"github.com/VxVxN/gamedevlib/eventmanager"
 	"github.com/VxVxN/gamedevlib/raycasting"
 	"github.com/ebitenui/ebitenui"
@@ -23,8 +25,6 @@ import (
 	"github.com/VxVxN/game/internal/shadow"
 	"github.com/VxVxN/game/internal/stager"
 	"github.com/VxVxN/game/internal/ui"
-	"github.com/VxVxN/game/pkg/animation"
-	"github.com/VxVxN/game/pkg/audioplayer"
 	"github.com/VxVxN/game/pkg/background"
 	playerpkg "github.com/VxVxN/game/pkg/player"
 	"github.com/VxVxN/game/pkg/rectangle"
