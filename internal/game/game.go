@@ -6,6 +6,8 @@ import (
 	"image"
 	"image/color"
 	"log"
+	"os"
+	"path"
 	"sort"
 
 	"github.com/VxVxN/gamedevlib/animation"
@@ -69,22 +71,29 @@ func NewGame() (*Game, error) {
 	logger.Printf("[INFO] Monitor size(%dx%d)", w, h)
 	width, height := float64(w), float64(h)
 
-	road, _, err := ebitenutil.NewImageFromFile("assets/road.png")
+	workingDir, err := os.Getwd()
+	if err != nil {
+		return nil, fmt.Errorf("can't get working dir: %s", err)
+	}
+
+	assetPath := path.Join(workingDir, "assets")
+
+	road, _, err := ebitenutil.NewImageFromFile(path.Join(assetPath, "road.png"))
 	if err != nil {
 		return nil, fmt.Errorf("failed to init road image: %v", err)
 	}
 
-	gameElementsSet, _, err := ebitenutil.NewImageFromFile("assets/game elements.png")
+	gameElementsSet, _, err := ebitenutil.NewImageFromFile(path.Join(assetPath, "game elements.png"))
 	if err != nil {
 		return nil, fmt.Errorf("failed to init game elements image: %v", err)
 	}
 
-	vehicleShadowsSet, _, err := ebitenutil.NewImageFromFile("assets/vehicleShadows.png")
+	vehicleShadowsSet, _, err := ebitenutil.NewImageFromFile(path.Join(assetPath, "vehicleShadows.png"))
 	if err != nil {
 		return nil, fmt.Errorf("failed to init game vehicle shadows image: %v", err)
 	}
 
-	explosionSet, _, err := ebitenutil.NewImageFromFile("assets/explosion.png")
+	explosionSet, _, err := ebitenutil.NewImageFromFile(path.Join(assetPath, "explosion.png"))
 	if err != nil {
 		return nil, fmt.Errorf("failed to init game explosion image: %v", err)
 	}
@@ -156,7 +165,7 @@ func NewGame() (*Game, error) {
 		eventManager:       eventmanager.NewEventManager(supportedKeys),
 		textFaceSource:     textFaceSource,
 		stager:             stager.New(),
-		statisticer:        statisticer.NewStatisticer(),
+		statisticer:        statisticer.NewStatisticer(path.Join(workingDir, "statistics.txt")),
 		audioPlayer:        audioPlayer,
 		nightImage:         ebiten.NewImage(int(width), int(height)),
 		triangleImage:      ebiten.NewImage(int(width), int(height)),

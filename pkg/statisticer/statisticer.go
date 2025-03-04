@@ -21,14 +21,15 @@ func NewRecord(name string, points int) Record {
 }
 
 type Statisticer struct {
+	pathToSaveFile string
 }
 
-func NewStatisticer() *Statisticer {
-	return &Statisticer{}
+func NewStatisticer(pathToSaveFile string) *Statisticer {
+	return &Statisticer{pathToSaveFile: pathToSaveFile}
 }
 
 func (s *Statisticer) Load() ([]Record, error) {
-	file, err := os.Open("statistics.txt")
+	file, err := os.Open(s.pathToSaveFile)
 	if err != nil {
 		return []Record{}, nil
 	}
