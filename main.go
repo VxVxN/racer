@@ -3,8 +3,9 @@ package main
 import (
 	"log"
 
-	"github.com/VxVxN/game/internal/game"
 	"github.com/hajimehoshi/ebiten/v2"
+
+	"github.com/VxVxN/game/internal/game"
 )
 
 func main() {
@@ -12,6 +13,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to init game: %v", err)
 	}
+	defer game.Close()
 
 	ebiten.SetWindowTitle("Racer")
 

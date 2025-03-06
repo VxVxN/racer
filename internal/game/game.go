@@ -64,10 +64,16 @@ type Game struct {
 	explosionAnimation         *animation.Animation
 	logger                     *slog.Logger
 	settings                   *settings.Settings
+	loggerFile                 *os.File
 }
 
 func NewGame() (*Game, error) {
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	loggerFile, err := os.OpenFile("racer.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	if err != nil {
+		log.Fatalf("error opening file: %v", err)
+	}
+
+	logger := slog.New(slog.NewJSONHandler(loggerFile, nil))
 
 	w, h := ebiten.Monitor().Size()
 	logger.Info("Monitor size", "width", w, "height", h)
@@ -176,6 +182,7 @@ func NewGame() (*Game, error) {
 		player:             playerpkg.NewPlayer(playerCar, playerShadow, gameSettings.SavedSettings.CarSensitivity),
 		logger:             logger,
 		settings:           gameSettings,
+		loggerFile:         loggerFile,
 	}
 
 	game.explosionAnimation.SetRepeatable(false)
@@ -581,4 +588,8 @@ func (game *Game) ApplySettings() {
 
 	game.audioPlayer.SetVolume(float64(game.settings.SavedSettings.MusicVolume) / 100)
 	game.explosionAnimation.SetVolume(float64(game.settings.SavedSettings.EffectsVolume) / 100)
+}
+
+func (game *Game) Close() {
+	game.loggerFile.Close()
 }
