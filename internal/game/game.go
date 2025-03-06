@@ -6,6 +6,7 @@ import (
 	"image"
 	"image/color"
 	"log"
+	"log/slog"
 	"os"
 	"path"
 	"sort"
@@ -61,14 +62,15 @@ type Game struct {
 	objects                    []raycasting.Object
 	sunDirection               shadow.DirectionShadow
 	explosionAnimation         *animation.Animation
-	logger                     *log.Logger
+	logger                     *slog.Logger
 	settings                   *settings.Settings
 }
 
 func NewGame() (*Game, error) {
-	logger := log.Default()
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+
 	w, h := ebiten.Monitor().Size()
-	logger.Printf("[INFO] Monitor size(%dx%d)", w, h)
+	logger.Info("Monitor size", "width", w, "height", h)
 	width, height := float64(w), float64(h)
 
 	workingDir, err := os.Getwd()
@@ -129,7 +131,7 @@ func NewGame() (*Game, error) {
 
 	audioContext := audio.NewContext(sampleRate)
 
-	audioPlayer, err := audioplayer.NewAudioPlayer(audioContext, "music", logger)
+	audioPlayer, err := audioplayer.NewAudioPlayer(audioContext, "music")
 	if err != nil {
 		return nil, fmt.Errorf("failed to init audio player: %v", err)
 	}
@@ -241,7 +243,7 @@ func NewGame() (*Game, error) {
 	}
 
 	game.stager.SetOnChange(func(oldStage, newStage stager.Stage) {
-		game.logger.Printf("[INFO] Setting stage to %v", newStage)
+		game.logger.Info("Setting stage", "stage", newStage)
 		if buildUI, ok := game.changeUIByStage[newStage]; ok {
 			buildUI()
 		}
@@ -282,7 +284,7 @@ func (game *Game) Update() error {
 
 	if game.cars.Collision(game.player.Rectangle) {
 		game.player.SetDead(true)
-		game.logger.Println("[DBG] Collision detected")
+		game.logger.Debug("Collision detected")
 		game.explosionAnimation.SetPosition(game.player.X*2.15, game.player.Y*2.15)
 		game.explosionAnimation.Start()
 		game.explosionAnimation.SetCallback(func() {

@@ -275,7 +275,7 @@ func newSettingsUI(game *Game, res *ui.UiResources) *settingsUI {
 			game.stager.RecoveryLastStage()
 			game.settings.Save()
 			if err := game.settings.WriteToFile(); err != nil {
-				game.logger.Printf("[ERROR] Error saving settings: %v", err)
+				game.logger.Error("Error saving settings", "error", err)
 				return
 			}
 			game.ApplySettings()
