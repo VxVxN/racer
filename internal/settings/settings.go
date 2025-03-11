@@ -2,7 +2,7 @@ package settings
 
 import (
 	"encoding/json"
-	"log"
+	"log/slog"
 	"os"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -11,6 +11,7 @@ import (
 type Settings struct {
 	SavedSettings *settingValues
 	RawSettings   *settingValues
+	logger        *slog.Logger
 }
 
 type settingValues struct {
@@ -46,7 +47,7 @@ func (resolution *Resolution) Size() (int, int) {
 	return 1280, 720
 }
 
-func New() (*Settings, error) {
+func New(logger *slog.Logger) (*Settings, error) {
 	settings := settingValues{
 		Resolution:     ResolutionFullScreen,
 		MusicVolume:    100,
@@ -55,16 +56,17 @@ func New() (*Settings, error) {
 	}
 	data, err := os.ReadFile("settings.json")
 	if err == nil {
-		log.Printf("[INFO] Started settings: %v", string(data))
 		if err = json.Unmarshal(data, &settings); err != nil {
 			return nil, err
 		}
 	}
+	logger.Info("Started settings", "data", string(data))
 	savedSettings := settings
 	rawSettings := settings
 	return &Settings{
 		SavedSettings: &savedSettings,
 		RawSettings:   &rawSettings,
+		logger:        logger,
 	}, nil
 }
 
@@ -73,7 +75,11 @@ func (settings *Settings) WriteToFile() error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile("settings.json", data, 0644)
+	if err = os.WriteFile("settings.json", data, 0644); err != nil {
+		return err
+	}
+	settings.logger.Info("Saved settings", "data", string(data))
+	return nil
 }
 
 func (settings *Settings) Save() {

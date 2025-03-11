@@ -73,7 +73,7 @@ func NewGame() (*Game, error) {
 		log.Fatalf("error opening file: %v", err)
 	}
 
-	logger := slog.New(slog.NewJSONHandler(loggerFile, nil))
+	logger := slog.New(slog.NewJSONHandler(loggerFile, &slog.HandlerOptions{Level: slog.LevelDebug}))
 
 	w, h := ebiten.Monitor().Size()
 	logger.Info("Monitor size", "width", w, "height", h)
@@ -159,7 +159,7 @@ func NewGame() (*Game, error) {
 		ebiten.KeyX,
 	}
 
-	gameSettings, err := settings.New()
+	gameSettings, err := settings.New(logger)
 	if err != nil {
 		return nil, fmt.Errorf("failed to init game settings: %v", err)
 	}
@@ -250,7 +250,7 @@ func NewGame() (*Game, error) {
 	}
 
 	game.stager.SetOnChange(func(oldStage, newStage stager.Stage) {
-		game.logger.Info("Setting stage", "stage", newStage)
+		game.logger.Debug("Setting stage", "stage", newStage)
 		if buildUI, ok := game.changeUIByStage[newStage]; ok {
 			buildUI()
 		}

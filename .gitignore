@@ -2,3 +2,4 @@
 statistics.txt
 settings.json
 *.exe
+*.log
