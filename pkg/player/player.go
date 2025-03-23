@@ -1,10 +1,10 @@
 package player
 
 import (
+	"github.com/VxVxN/gamedevlib/rectangle"
 	"github.com/hajimehoshi/ebiten/v2"
 
 	"github.com/VxVxN/game/internal/shadow"
-	"github.com/VxVxN/game/pkg/rectangle"
 )
 
 type Player struct {

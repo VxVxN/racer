@@ -3,9 +3,10 @@ package cargenerator
 import (
 	"math/rand/v2"
 
-	"github.com/VxVxN/game/internal/shadow"
-	"github.com/VxVxN/game/pkg/rectangle"
+	"github.com/VxVxN/gamedevlib/rectangle"
 	"github.com/hajimehoshi/ebiten/v2"
+
+	"github.com/VxVxN/game/internal/shadow"
 )
 
 type CarGenerator struct {

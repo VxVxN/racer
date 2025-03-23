@@ -15,6 +15,7 @@ import (
 	"github.com/VxVxN/gamedevlib/audioplayer"
 	"github.com/VxVxN/gamedevlib/eventmanager"
 	"github.com/VxVxN/gamedevlib/raycasting"
+	"github.com/VxVxN/gamedevlib/rectangle"
 	"github.com/ebitenui/ebitenui"
 	"github.com/ebitenui/ebitenui/widget"
 	"github.com/hajimehoshi/ebiten/v2"
@@ -30,7 +31,6 @@ import (
 	"github.com/VxVxN/game/internal/ui"
 	"github.com/VxVxN/game/pkg/background"
 	playerpkg "github.com/VxVxN/game/pkg/player"
-	"github.com/VxVxN/game/pkg/rectangle"
 	"github.com/VxVxN/game/pkg/statisticer"
 )
 
