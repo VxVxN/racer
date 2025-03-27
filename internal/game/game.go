@@ -164,6 +164,18 @@ func NewGame() (*Game, error) {
 		return nil, fmt.Errorf("failed to init game settings: %v", err)
 	}
 
+	explosionTileWidth := 900
+	explosionAnimation := animation.NewAnimation([]*ebiten.Image{
+		explosionSet.SubImage(image.Rect(0, 0, explosionTileWidth, explosionTileWidth)).(*ebiten.Image),
+		explosionSet.SubImage(image.Rect(explosionTileWidth, 0, explosionTileWidth*2, explosionTileWidth)).(*ebiten.Image),
+		explosionSet.SubImage(image.Rect(explosionTileWidth*2, 0, explosionTileWidth*3, explosionTileWidth)).(*ebiten.Image),
+		explosionSet.SubImage(image.Rect(explosionTileWidth*3, 0, explosionTileWidth*4, explosionTileWidth)).(*ebiten.Image),
+		explosionSet.SubImage(image.Rect(explosionTileWidth*4, 0, explosionTileWidth*5, explosionTileWidth)).(*ebiten.Image),
+		explosionSet.SubImage(image.Rect(explosionTileWidth*5, 0, explosionTileWidth*6, explosionTileWidth)).(*ebiten.Image),
+	})
+	explosionAnimation.Start()
+	explosionAnimation.SetRepeatable(true)
+
 	game := &Game{
 		scrollSpeed:  10.0,
 		windowWidth:  width,
@@ -177,7 +189,7 @@ func NewGame() (*Game, error) {
 		audioPlayer:        audioPlayer,
 		nightImage:         ebiten.NewImage(int(width), int(height)),
 		triangleImage:      ebiten.NewImage(int(width), int(height)),
-		explosionAnimation: animation.NewAnimation(explosionSet, 0, 0, 910, 900, 6),
+		explosionAnimation: explosionAnimation,
 		cars:               cargenerator.New([]*ebiten.Image{greenCar, orangeCar, redCar, grayCar}, []*ebiten.Image{redTruck, greenTruck}, []*ebiten.Image{blueLongTruck, greenLongTruck}, height, startRoad, carShadow, truckShadow, longTruckShadow),
 		player:             playerpkg.NewPlayer(playerCar, playerShadow, gameSettings.SavedSettings.CarSensitivity),
 		logger:             logger,
